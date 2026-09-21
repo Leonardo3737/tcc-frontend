@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Tokens de cor em canais RGB crus, para que o Tailwind consiga aplicar
+ * opacidade (`bg-primaria/10`). Trocar o tema e trocar estas variaveis.
+ */
+@layer base {
+  :root {
+    --cor-fundo: 248 250 252;
+    --cor-superficie: 255 255 255;
+    --cor-borda: 226 232 240;
+    --cor-texto: 15 23 42;
+    --cor-texto-suave: 100 116 139;
+
+    --cor-primaria: 29 78 216;
+    --cor-primaria-suave: 239 246 255;
+    --cor-primaria-contraste: 255 255 255;
+
+    --cor-sucesso: 21 128 61;
+    --cor-alerta: 180 83 9;
+    --cor-perigo: 185 28 28;
+    --cor-info: 3 105 161;
+  }
+
+  * {
+    @apply border-borda;
+  }
+
+  body {
+    @apply bg-fundo text-texto antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /**
+   * Foco visivel e consistente em tudo que recebe teclado.
+   * Removido apenas para ponteiro (`:focus:not(:focus-visible)`), nunca de vez —
+   * tirar o outline global e a forma mais rapida de tornar um app inacessivel.
+   */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primaria ring-offset-2 ring-offset-fundo;
+  }
+}
+
+@layer components {
+  /* Alvo de toque minimo de 44px em telas de toque, sem inflar o desktop. */
+  @media (pointer: coarse) {
+    .alvo-toque {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+}
+
+/* Respeita quem pediu menos movimento no sistema operacional. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
