@@ -193,6 +193,62 @@ testar interação visual, Playwright é o próximo passo.
 
 ---
 
+## AD-F12 — Identidade visual própria, com tokens como única fonte
+
+**Contexto.** A primeira versão usava a paleta padrão do Tailwind (slate + azul-700) e a
+Inter. Funcionava, mas tinha a cara de qualquer template — e não dizia nada sobre o
+domínio.
+
+**Decisão.** Os tokens em `globals.css` (canais RGB) continuam sendo a única fonte de cor;
+os componentes de `components/ui` só consomem tokens. O que mudou foi o conteúdo deles:
+
+| Papel | Cor | Uso |
+|---|---|---|
+| Primária | azul-petróleo `#0F5E63` | ação principal, AGENDADO/PLANEJADA, foco, sidebar |
+| Acento | coral `#E8793A` (texto: `#A34714`) | só o que pede ação: vaga livre, pendência, item atual do menu |
+| Neutros | fundo `#F7F5F0`, texto `#211D18`, borda `#E5E0D6` | tom quente em vez do slate frio |
+| Papel MONITOR | violeta-anil `#5440B8` | etiqueta com ícone de apresentação |
+| Papel MONITORADO | teal `#0B6A6A` | etiqueta com ícone de livro |
+| Professor responsável | terracota `#964422` | etiqueta com ícone de pasta |
+| Disciplinas | 8 matizes de luminosidade parecida | faixa lateral e selo de iniciais |
+
+**Status têm semântica fixa em todo o sistema:** programado (petróleo), positivo (verde),
+atenção (âmbar), terminal (cinza) e descartado (anel vazio, esmaecido — CANCELADO não é
+vermelho: não é erro, é algo que não vai acontecer). Selo e gráfico usam o mesmo mapa
+(`TOM_STATUS_*` em `badge.tsx`).
+
+**Ajuste sobre a proposta inicial.** MONITORADO (teal claro) e AGENDADO (petróleo) ficam
+na mesma família de matiz. Em vez de afastar as cores e perder a coerência da paleta, a
+distinção foi feita pela **forma**: status é ponto + rótulo sobre fundo neutro; papel é
+etiqueta preenchida com ícone. Assim os dois nunca se confundem, inclusive para quem não
+distingue as cores.
+
+**Cor por disciplina.** Derivada do `codigo` por FNV-1a → índice de 0 a 7
+(`lib/cores/disciplina.ts`). Estável entre telas e sessões, sem estado salvo. Colisões
+são esperadas; a cor ajuda a localizar, o rótulo identifica.
+
+**Contraste.** Todos os pares texto/fundo passam WCAG AA (4,5:1); os tons de
+"preenchimento" (acento, disciplinas, papel monitorado) são para faixas, pontos e barras,
+nunca para texto pequeno sobre claro. A cor nunca é a única portadora de informação.
+
+**Tipografia.** Títulos em **Bricolage Grotesque** (grotesca com desenho próprio e eixo
+de tamanho óptico: caráter sem ser decorativa). Texto em **Source Sans 3** (humanista,
+desenhada para interface, com algarismos tabulares — horários, vagas e médias usam
+`tabular-nums` e alinham em coluna). A Inter foi descartada por ser o padrão de quase todo
+template. A escala `xs/sm/base` foi reajustada porque a Source Sans tem altura-x menor, e
+há nomes semânticos (`titulo-pagina`, `titulo-secao`, `titulo-cartao`, `legenda`).
+
+**Forma.** Cartão com borda fina e sem sombra (sombra só no que flutua: diálogo e menu);
+hierarquia pelo espaço e pela faixa de cor. Estado vazio alinhado à esquerda, com
+ilustração de traço simples e uma ação concreta. Esqueletos com o formato do conteúdo
+final (`SkeletonCartaoMonitoria`, `SkeletonCartaoAtendimento`).
+
+**O que foi evitado de propósito:** gradientes, glassmorphism, sombras exageradas, emojis,
+ícone ao lado de cada título, grades de cartões idênticos para indicadores (viraram uma
+faixa única), texto de marketing.
+
+---
+
 ## O que foi deliberadamente NÃO feito
 
 | Item | Motivo |
@@ -201,6 +257,6 @@ testar interação visual, Playwright é o próximo passo.
 | **Badges, níveis, conquistas** | Não existem no backend — só o livro-razão de pontos e o ranking |
 | **Refresh token / renovação silenciosa** | O backend não expõe. O TTL de 8h e o tratamento de 401 cobrem o uso real |
 | **Content-Security-Policy** | Uma CSP correta exige nonce por requisição; uma frouxa (`unsafe-inline`) daria falsa sensação de proteção. Registrado como próximo passo de endurecimento |
-| **Modo escuro** | Fora do escopo; os tokens de cor em `globals.css` já permitem adicionar depois trocando um bloco |
+| **Modo escuro** | Fora do escopo; os tokens de cor em `globals.css` já permitem adicionar depois trocando um bloco (os pares de contraste precisariam ser reconferidos) |
 | **i18n** | Aplicação monolíngue |
 | **Storybook** | Não paga o custo neste escopo |

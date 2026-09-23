@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarRange, User } from 'lucide-react';
 
-import { Badge, BadgePapel, BadgeStatusMonitoria } from '@/components/ui/badge';
+import { BadgePapel, BadgeResponsavel, BadgeStatusMonitoria } from '@/components/ui/badge';
+import { SeloDisciplina } from '@/components/comum/selo-disciplina';
 import { AcoesStatusMonitoria } from './acoes-status-monitoria';
 import { useContextoMonitoria } from '@/providers/monitoria-provider';
 import { rotas } from '@/config/rotas';
@@ -59,45 +59,44 @@ export function CabecalhoMonitoria() {
 
   return (
     <div className="mb-6 space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 space-y-1.5">
-          <p className="font-mono text-xs text-texto-suave">{disciplina?.codigo ?? '—'}</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 gap-3.5">
+          <SeloDisciplina
+            codigo={disciplina?.codigo}
+            nome={disciplina?.nome}
+            tamanho="lg"
+            className="hidden sm:inline-flex"
+          />
 
-          <h1 className="text-xl font-semibold text-texto sm:text-2xl">
-            {disciplina?.nome ?? 'Monitoria'}
-          </h1>
-
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-texto-suave">
-            <span className="inline-flex items-center gap-1.5">
-              <CalendarRange className="h-3.5 w-3.5" aria-hidden />
+          <div className="min-w-0 space-y-1.5">
+            <p className="text-xs text-texto-suave">
+              <span className="font-semibold">{disciplina?.codigo ?? '—'}</span> ·{' '}
               {monitoria.periodo}
-            </span>
+              {monitoria.professor && <> · {monitoria.professor.nome}</>}
+              {monitoria.dataInicio && monitoria.dataFim && (
+                <>
+                  {' '}
+                  · {formatarDataSimples(monitoria.dataInicio)} a{' '}
+                  {formatarDataSimples(monitoria.dataFim)}
+                </>
+              )}
+            </p>
 
-            {monitoria.professor && (
-              <span className="inline-flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5" aria-hidden />
-                {monitoria.professor.nome}
-              </span>
-            )}
+            <h1 className="font-titulo text-[1.375rem] font-semibold leading-7 tracking-tight text-texto sm:text-titulo-pagina">
+              {disciplina?.nome ?? 'Monitoria'}
+            </h1>
 
-            {monitoria.dataInicio && monitoria.dataFim && (
-              <span>
-                {formatarDataSimples(monitoria.dataInicio)} a{' '}
-                {formatarDataSimples(monitoria.dataFim)}
-              </span>
-            )}
-          </div>
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              <BadgeStatusMonitoria status={monitoria.status} />
 
-          <div className="flex flex-wrap items-center gap-1.5 pt-1">
-            <BadgeStatusMonitoria status={monitoria.status} />
-
-            {/*
-              O papel é do usuário NESTA monitoria. A mesma pessoa carrega outro
-              papel na monitoria ao lado — por isso ele aparece aqui, no contexto,
-              e nunca junto do perfil da conta.
-            */}
-            {contexto.meuPapel && <BadgePapel papel={contexto.meuPapel} />}
-            {contexto.souResponsavel && <Badge tom="primaria">Professor responsável</Badge>}
+              {/*
+                O papel é do usuário NESTA monitoria. A mesma pessoa carrega outro
+                papel na monitoria ao lado — por isso ele aparece aqui, no contexto,
+                e nunca junto do perfil da conta.
+              */}
+              {contexto.meuPapel && <BadgePapel papel={contexto.meuPapel} />}
+              {contexto.souResponsavel && <BadgeResponsavel />}
+            </div>
           </div>
         </div>
 
@@ -105,7 +104,7 @@ export function CabecalhoMonitoria() {
       </div>
 
       <nav aria-label="Seções da monitoria">
-        <ul className="flex gap-1 overflow-x-auto border-b border-borda [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <ul className="rolagem-discreta flex gap-1 overflow-x-auto border-b border-borda">
           {abas.map((aba) => {
             const ativa = aba.exato ? caminho === aba.href : caminho.startsWith(aba.href);
 
@@ -115,9 +114,9 @@ export function CabecalhoMonitoria() {
                   href={aba.href}
                   aria-current={ativa ? 'page' : undefined}
                   className={cn(
-                    'alvo-toque block shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors',
+                    'alvo-toque -mb-px block shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-semibold transition-colors duration-150',
                     ativa
-                      ? 'border-primaria text-primaria'
+                      ? 'border-primaria text-texto'
                       : 'border-transparent text-texto-suave hover:text-texto',
                   )}
                 >

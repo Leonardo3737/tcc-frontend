@@ -7,6 +7,7 @@ import { Select } from '@/components/ui/campo';
 import { Alert } from '@/components/ui/alert';
 import { EstadoErro, EstadoVazio } from '@/components/ui/estados';
 import { SkeletonLista } from '@/components/ui/skeleton';
+import { SkeletonCartaoAtendimento } from './cartao-atendimento';
 import { Paginacao } from '@/components/comum/paginacao';
 import { CartaoAtendimento } from './cartao-atendimento';
 import { listarMeusAtendimentos } from '../api/atendimentos.service';
@@ -75,7 +76,7 @@ export function PainelMeusAtendimentos() {
         ]}
       />
 
-      {consulta.isPending && <SkeletonLista itens={3} />}
+      {consulta.isPending && <SkeletonLista itens={3} item={SkeletonCartaoAtendimento} />}
 
       {consulta.isError && (
         <EstadoErro erro={consulta.error} aoTentarNovamente={() => void consulta.refetch()} />

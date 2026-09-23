@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ShieldOff } from 'lucide-react';
 
+import { classesBotao } from '@/components/ui/button';
 import { rotas } from '@/config/rotas';
 
 /**
@@ -28,18 +29,15 @@ export function SemAcesso({
   descricao: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-4 rounded-card border border-dashed border-borda bg-superficie/60 px-6 py-16 text-center">
-      <ShieldOff className="h-8 w-8 text-texto-suave" aria-hidden />
+    <div className="flex flex-col gap-4 rounded-card border border-dashed border-borda-forte bg-superficie/60 px-5 py-6 sm:flex-row sm:items-center sm:px-6">
+      <ShieldOff className="h-8 w-8 shrink-0 text-texto-suave" aria-hidden />
 
-      <div className="space-y-1">
-        <h2 className="font-medium text-texto">{titulo}</h2>
-        <p className="mx-auto max-w-md text-sm text-texto-suave">{descricao}</p>
+      <div className="min-w-0 flex-1 space-y-1">
+        <h2 className="font-titulo text-titulo-cartao text-texto">{titulo}</h2>
+        <p className="max-w-prose text-sm text-texto-suave">{descricao}</p>
       </div>
 
-      <Link
-        href={rotas.inicio}
-        className="rounded-lg border border-borda bg-superficie px-4 py-2 text-sm font-medium text-texto transition-colors hover:bg-fundo"
-      >
+      <Link href={rotas.inicio} className={classesBotao('secundaria', 'md', 'shrink-0')}>
         Voltar ao início
       </Link>
     </div>

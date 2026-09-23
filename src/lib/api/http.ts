@@ -78,7 +78,8 @@ async function interpretarResposta<T>(resposta: Response, caminho: string): Prom
   const semConteudo = resposta.status === 204 || resposta.headers.get('content-length') === '0';
   const ehJson = resposta.headers.get('content-type')?.includes('application/json') ?? false;
 
-  const corpo: unknown = semConteudo || !ehJson ? undefined : await resposta.json().catch(() => undefined);
+  const corpo: unknown =
+    semConteudo || !ehJson ? undefined : await resposta.json().catch(() => undefined);
 
   if (resposta.ok) {
     return corpo as T;

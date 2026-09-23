@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { CalendarClock, CalendarDays, GraduationCap, Star, Trophy } from 'lucide-react';
+import { CalendarClock, GraduationCap, Star } from 'lucide-react';
 
 import { classesBotao } from '@/components/ui/button';
 import { Card, CardCabecalho, CardConteudo } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Alert } from '@/components/ui/alert';
 import { BadgePapel } from '@/components/ui/badge';
 import { EstadoVazio } from '@/components/ui/estados';
 import { SkeletonCard } from '@/components/ui/skeleton';
-import { Indicador } from '@/components/comum/indicador';
+import { FaixaIndicadores, Indicador } from '@/components/comum/indicador';
 import { CartaoAtendimento } from '@/features/atendimentos/components/cartao-atendimento';
 import { CartaoMonitoria } from '@/features/monitorias/components/cartao-monitoria';
 import { listarMeusAtendimentos } from '@/features/atendimentos/api/atendimentos.service';
@@ -88,30 +88,20 @@ export function DashboardAluno() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <FaixaIndicadores>
         <Indicador
           rotulo="Monitorias"
           valor={monitorias.data?.meta.total ?? '—'}
           detalhe="Em andamento"
-          icone={<GraduationCap className="h-4 w-4" aria-hidden />}
         />
-        <Indicador
-          rotulo="Próximos atendimentos"
-          valor={proximos.data?.meta.total ?? '—'}
-          icone={<CalendarClock className="h-4 w-4" aria-hidden />}
-        />
+        <Indicador rotulo="Próximos atendimentos" valor={proximos.data?.meta.total ?? '—'} />
         <Indicador
           rotulo="Atendimentos com presença"
           valor={totalRealizados}
           detalhe="Nos 20 mais recentes"
-          icone={<CalendarDays className="h-4 w-4" aria-hidden />}
         />
-        <Indicador
-          rotulo="Pontos"
-          valor={pontos.data?.total ?? '—'}
-          icone={<Trophy className="h-4 w-4" aria-hidden />}
-        />
-      </div>
+        <Indicador rotulo="Pontos" valor={pontos.data?.total ?? '—'} />
+      </FaixaIndicadores>
 
       {pendentesDeAvaliacao.length > 0 && (
         <Card className="border-alerta/40">
@@ -191,8 +181,8 @@ export function DashboardAluno() {
               <Alert tom="info">
                 Repare nos selos <BadgePapel papel={PapelMonitoria.MONITOR} /> e{' '}
                 <BadgePapel papel={PapelMonitoria.MONITORADO} />: o papel vale{' '}
-                <strong>dentro de cada monitoria</strong>. Você pode ser monitor em uma
-                disciplina e monitorado em outra.
+                <strong>dentro de cada monitoria</strong>. Você pode ser monitor em uma disciplina e
+                monitorado em outra.
               </Alert>
             )}
           </>

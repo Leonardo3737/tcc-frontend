@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import { cn } from '@/lib/utils';
 
 /**
@@ -11,7 +13,7 @@ import { cn } from '@/lib/utils';
  * carregamento e a regiao com `aria-busy` ao redor.
  */
 export function Skeleton({ className }: { className?: string }) {
-  return <div aria-hidden className={cn('animate-pulse rounded-md bg-borda/70', className)} />;
+  return <div aria-hidden className={cn('animate-pulse rounded-md bg-fundo-suave', className)} />;
 }
 
 export function SkeletonTexto({ linhas = 3, className }: { linhas?: number; className?: string }) {
@@ -40,11 +42,30 @@ export function SkeletonCard({ className }: { className?: string }) {
   );
 }
 
-export function SkeletonLista({ itens = 4 }: { itens?: number }) {
+/**
+ * Lista de esqueletos com a FORMA do item real.
+ *
+ * `item` recebe o esqueleto especifico do cartao que vai aparecer (ex.:
+ * `SkeletonCartaoMonitoria`); sem ele, cai no cartao generico.
+ */
+export function SkeletonLista({
+  itens = 4,
+  item: Item = SkeletonCard,
+  className,
+}: {
+  itens?: number;
+  item?: (props: { className?: string }) => ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="space-y-3" role="status" aria-busy aria-label="Carregando lista">
+    <div
+      className={cn('space-y-3', className)}
+      role="status"
+      aria-busy
+      aria-label="Carregando lista"
+    >
       {Array.from({ length: itens }).map((_, indice) => (
-        <SkeletonCard key={indice} />
+        <Item key={indice} />
       ))}
     </div>
   );

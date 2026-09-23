@@ -51,11 +51,7 @@ export function noFuso(instante: string | Date, fuso: string): TZDate {
  * ("2026-09-01", "14:00") no `inicio`/`fim` que o backend espera. Note que o
  * fuso do navegador nao participa da conta em momento nenhum.
  */
-export function instanteDeDataHoraLocal(
-  data: string,
-  hora: string,
-  fuso: string,
-): string | null {
+export function instanteDeDataHoraLocal(data: string, hora: string, fuso: string): string | null {
   const [ano, mes, dia] = data.split('-').map(Number);
   const [horas, minutos] = hora.split(':').map(Number);
 

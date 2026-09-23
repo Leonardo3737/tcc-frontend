@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { CalendarCheck, Star, UserCheck, Users } from 'lucide-react';
 
 import { Card, CardCabecalho, CardConteudo } from '@/components/ui/card';
 import { EstadoErro } from '@/components/ui/estados';
@@ -17,7 +16,9 @@ import {
 import {
   BarrasPorStatus,
   CORES_STATUS_ATENDIMENTO,
+  FaixaIndicadores,
   Indicador,
+  SkeletonFaixaIndicadores,
 } from '@/components/comum/indicador';
 import { buscarAtividadeMonitores, buscarIndicadoresMonitoria } from '../api/analytics.service';
 import { useContextoMonitoria } from '@/providers/monitoria-provider';
@@ -49,13 +50,7 @@ export function PainelIndicadoresMonitoria() {
   });
 
   if (indicadores.isPending) {
-    return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[0, 1, 2, 3].map((indice) => (
-          <SkeletonCard key={indice} />
-        ))}
-      </div>
-    );
+    return <SkeletonFaixaIndicadores />;
   }
 
   if (indicadores.isError) {
@@ -68,31 +63,24 @@ export function PainelIndicadoresMonitoria() {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Indicador
-          rotulo="Atendimentos"
-          valor={dados.atendimentos.total}
-          icone={<CalendarCheck className="h-4 w-4" aria-hidden />}
-        />
+      <FaixaIndicadores>
+        <Indicador rotulo="Atendimentos" valor={dados.atendimentos.total} />
         <Indicador
           rotulo="Monitores ativos"
           valor={dados.monitoresAtivos}
           detalhe={`${dados.monitoradosAtivos} monitorados ativos`}
-          icone={<Users className="h-4 w-4" aria-hidden />}
         />
         <Indicador
           rotulo="Alunos atendidos"
           valor={dados.alunosAtendidos}
           detalhe={`Taxa de participação: ${Math.round(dados.taxaParticipacao * 100)}%`}
-          icone={<UserCheck className="h-4 w-4" aria-hidden />}
         />
         <Indicador
           rotulo="Média das avaliações"
           valor={dados.mediaAvaliacoes?.toFixed(1) ?? '—'}
           detalhe={`${dados.totalAvaliacoes} avaliação(ões)`}
-          icone={<Star className="h-4 w-4" aria-hidden />}
         />
-      </div>
+      </FaixaIndicadores>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -125,8 +113,8 @@ export function PainelIndicadoresMonitoria() {
             </dl>
 
             <p className="mt-3 text-xs text-texto-suave">
-              A taxa de participação compara monitorados que compareceram com o total de
-              monitorados ativos.
+              A taxa de participação compara monitorados que compareceram com o total de monitorados
+              ativos.
             </p>
           </CardConteudo>
         </Card>

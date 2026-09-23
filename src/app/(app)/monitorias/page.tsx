@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 
 import { CabecalhoPagina } from '@/components/layout/cabecalho-pagina';
 import { SkeletonLista } from '@/components/ui/skeleton';
+import { SkeletonCartaoMonitoria } from '@/features/monitorias/components/cartao-monitoria';
 import { PainelMonitorias } from '@/features/monitorias/components/painel-monitorias';
 
 export const metadata: Metadata = { title: 'Monitorias' };
@@ -16,7 +17,7 @@ export default function PaginaMonitorias() {
       />
 
       {/* O painel lê filtros da URL com useSearchParams. */}
-      <Suspense fallback={<SkeletonLista itens={3} />}>
+      <Suspense fallback={<SkeletonLista itens={3} item={SkeletonCartaoMonitoria} />}>
         <PainelMonitorias />
       </Suspense>
     </>

@@ -22,21 +22,15 @@ export function Tabela({ className, children }: { className?: string; children: 
 }
 
 export function TabelaCabecalho({ children }: { children: ReactNode }) {
-  return <thead className="border-b border-borda bg-fundo/60">{children}</thead>;
+  return <thead className="border-b border-borda">{children}</thead>;
 }
 
 export function TabelaCorpo({ children }: { children: ReactNode }) {
   return <tbody className="divide-y divide-borda">{children}</tbody>;
 }
 
-export function TabelaLinha({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
-  return <tr className={cn('transition-colors hover:bg-fundo/60', className)}>{children}</tr>;
+export function TabelaLinha({ className, children }: { className?: string; children: ReactNode }) {
+  return <tr className={cn('transition-colors hover:bg-fundo/70', className)}>{children}</tr>;
 }
 
 export function TabelaCabecalhoCelula({
@@ -52,7 +46,7 @@ export function TabelaCabecalhoCelula({
     <th
       scope={scope}
       className={cn(
-        'whitespace-nowrap px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-texto-suave',
+        'whitespace-nowrap px-3 py-2 text-left text-xs font-semibold text-texto-suave',
         className,
       )}
     >
@@ -61,12 +55,6 @@ export function TabelaCabecalhoCelula({
   );
 }
 
-export function TabelaCelula({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
+export function TabelaCelula({ className, children }: { className?: string; children: ReactNode }) {
   return <td className={cn('px-3 py-3 align-middle text-texto', className)}>{children}</td>;
 }

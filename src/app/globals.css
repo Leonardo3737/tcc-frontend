@@ -5,23 +5,70 @@
 /**
  * Tokens de cor em canais RGB crus, para que o Tailwind consiga aplicar
  * opacidade (`bg-primaria/10`). Trocar o tema e trocar estas variaveis.
+ *
+ * Os pares texto/fundo abaixo foram conferidos para WCAG AA (4,5:1 em texto
+ * normal). Os tons "-preenchimento" (acento, disciplinas, papel monitorado) sao
+ * para faixas, pontos e barras — nunca para texto pequeno sobre fundo claro.
+ * Ver docs/decisoes-arquiteturais.md (AD-F12).
  */
 @layer base {
   :root {
-    --cor-fundo: 248 250 252;
+    /* Neutros quentes: o off-white tira o "branco de planilha" sem virar bege. */
+    --cor-fundo: 247 245 240; /* #F7F5F0 */
+    --cor-fundo-suave: 239 236 229; /* #EFECE5 — hover, faixas internas */
     --cor-superficie: 255 255 255;
-    --cor-borda: 226 232 240;
-    --cor-texto: 15 23 42;
-    --cor-texto-suave: 100 116 139;
+    --cor-borda: 229 224 214; /* #E5E0D6 */
+    --cor-borda-forte: 204 197 184; /* #CCC5B8 — contorno de controles */
+    --cor-texto: 33 29 24; /* #211D18 */
+    --cor-texto-suave: 99 92 82; /* #635C52 — 5,9:1 sobre o fundo */
 
-    --cor-primaria: 29 78 216;
-    --cor-primaria-suave: 239 246 255;
+    /* Primaria: azul-petroleo. Sobria e academica, longe do azul-700 padrao. */
+    --cor-primaria: 15 94 99; /* #0F5E63 */
+    --cor-primaria-forte: 10 71 75; /* #0A474B — hover */
+    --cor-primaria-suave: 224 238 237; /* #E0EEED */
     --cor-primaria-contraste: 255 255 255;
 
-    --cor-sucesso: 21 128 61;
-    --cor-alerta: 180 83 9;
-    --cor-perigo: 185 28 28;
-    --cor-info: 3 105 161;
+    /* Acento: so para o que pede acao (proximo atendimento, vaga, pendencia). */
+    --cor-acento: 232 121 58; /* #E8793A — preenchimento */
+    --cor-acento-forte: 163 71 20; /* #A34714 — texto sobre claro */
+    --cor-acento-suave: 252 236 223; /* #FCECDF */
+
+    --cor-sucesso: 34 112 68; /* #227044 */
+    --cor-sucesso-suave: 225 241 231;
+    --cor-alerta: 150 90 6; /* #965A06 — ambar legivel como texto */
+    --cor-alerta-preenchimento: 222 160 48;
+    --cor-alerta-suave: 251 241 214;
+    --cor-perigo: 176 36 26; /* #B0241A */
+    --cor-perigo-suave: 252 233 230;
+    --cor-info: 15 94 99; /* informativo = primaria, sem um 5o azul */
+    --cor-neutro: 128 120 108; /* ponto de status terminal (cinza quente) */
+
+    /*
+     * Papel contextual. E o conceito central do dominio: a mesma pessoa e
+     * MONITOR aqui e MONITORADO ali, entao o papel precisa ser reconhecivel de
+     * relance — sempre acompanhado de icone e rotulo, nunca so pela cor.
+     */
+    --cor-papel-monitor: 84 64 184; /* #5440B8 violeta-anil */
+    --cor-papel-monitor-suave: 237 234 250;
+    --cor-papel-monitorado: 11 106 106; /* #0B6A6A teal (texto) */
+    --cor-papel-monitorado-preenchimento: 64 163 160;
+    --cor-papel-monitorado-suave: 221 241 239;
+    --cor-papel-professor: 150 68 34; /* #964422 terracota */
+    --cor-papel-professor-suave: 248 232 222;
+
+    /*
+     * 8 matizes para disciplinas, com luminosidade parecida entre si (nenhuma
+     * "grita" mais que as outras) e escuros o bastante para iniciais brancas.
+     * O indice vem de um hash do codigo da disciplina (lib/cores/disciplina.ts).
+     */
+    --cor-disciplina-0: 168 72 40; /* terracota */
+    --cor-disciplina-1: 138 98 12; /* ocre */
+    --cor-disciplina-2: 84 110 30; /* oliva */
+    --cor-disciplina-3: 30 112 82; /* verde-mata */
+    --cor-disciplina-4: 24 104 134; /* azul-aco */
+    --cor-disciplina-5: 64 86 168; /* anil */
+    --cor-disciplina-6: 118 72 164; /* violeta */
+    --cor-disciplina-7: 164 58 104; /* vinho */
   }
 
   * {
@@ -29,8 +76,13 @@
   }
 
   body {
-    @apply bg-fundo text-texto antialiased;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    @apply bg-fundo font-sans text-sm text-texto antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
   }
 
   /**
@@ -41,6 +93,10 @@
   :focus-visible {
     @apply outline-none ring-2 ring-primaria ring-offset-2 ring-offset-fundo;
   }
+
+  ::selection {
+    background: rgb(var(--cor-primaria) / 0.18);
+  }
 }
 
 @layer components {
@@ -50,6 +106,14 @@
       min-height: 44px;
       min-width: 44px;
     }
+  }
+
+  /* Rolagem horizontal sem barra visivel (abas no celular). */
+  .rolagem-discreta {
+    scrollbar-width: none;
+  }
+  .rolagem-discreta::-webkit-scrollbar {
+    display: none;
   }
 }
 

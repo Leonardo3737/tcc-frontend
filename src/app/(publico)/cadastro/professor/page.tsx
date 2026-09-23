@@ -11,8 +11,8 @@ export default function PaginaCadastroProfessor() {
   return (
     <Card>
       <CardConteudo className="space-y-6">
-        <div className="space-y-1.5 text-center">
-          <h1 className="text-xl font-semibold text-texto">Criar conta de professor</h1>
+        <div className="space-y-1.5">
+          <h1 className="font-titulo text-titulo-pagina text-texto">Criar conta de professor</h1>
           <p className="text-sm text-texto-suave">
             Professores criam monitorias e habilitam monitores.
           </p>

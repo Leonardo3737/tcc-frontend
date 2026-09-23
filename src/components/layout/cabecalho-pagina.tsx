@@ -23,13 +23,15 @@ export function CabecalhoPagina({
   return (
     <div
       className={cn(
-        'mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between',
+        'mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between',
         className,
       )}
     >
       <div className="min-w-0 space-y-1">
-        <h1 className="text-xl font-semibold text-texto sm:text-2xl">{titulo}</h1>
-        {descricao && <p className="text-sm text-texto-suave">{descricao}</p>}
+        <h1 className="font-titulo text-[1.375rem] font-semibold leading-7 tracking-tight text-texto sm:text-titulo-pagina">
+          {titulo}
+        </h1>
+        {descricao && <p className="max-w-prose text-sm text-texto-suave">{descricao}</p>}
       </div>
 
       {acoes && <div className="flex shrink-0 flex-wrap items-center gap-2">{acoes}</div>}

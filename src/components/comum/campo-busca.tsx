@@ -57,7 +57,7 @@ export function CampoBusca({
         onChange={(evento) => setTexto(evento.target.value)}
         placeholder={placeholder}
         aria-label={rotulo}
-        className="alvo-toque w-full rounded-lg border border-borda bg-superficie py-2 pl-9 pr-16 text-sm shadow-sm placeholder:text-texto-suave/70"
+        className="alvo-toque w-full rounded-md border border-borda-forte bg-superficie py-2 pl-9 pr-16 text-sm transition-colors duration-150 placeholder:text-texto-suave/70 hover:border-texto-suave/60"
       />
 
       <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
@@ -71,7 +71,7 @@ export function CampoBusca({
               aoBuscar('');
             }}
             aria-label="Limpar busca"
-            className="rounded p-1 text-texto-suave transition-colors hover:bg-fundo hover:text-texto"
+            className="rounded p-1 text-texto-suave transition-colors hover:bg-fundo-suave hover:text-texto"
           >
             <X className="h-3.5 w-3.5" aria-hidden />
           </button>

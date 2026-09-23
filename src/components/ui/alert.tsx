@@ -5,11 +5,19 @@ import { cn } from '@/lib/utils';
 
 type TomAlerta = 'info' | 'sucesso' | 'alerta' | 'erro';
 
-const ESTILOS: Record<TomAlerta, { caixa: string; icone: typeof Info }> = {
-  info: { caixa: 'border-info/30 bg-info/5 text-info', icone: Info },
-  sucesso: { caixa: 'border-sucesso/30 bg-sucesso/5 text-sucesso', icone: CheckCircle2 },
-  alerta: { caixa: 'border-alerta/30 bg-alerta/5 text-alerta', icone: AlertTriangle },
-  erro: { caixa: 'border-perigo/30 bg-perigo/5 text-perigo', icone: XCircle },
+const ESTILOS: Record<TomAlerta, { caixa: string; icone: typeof Info; cor: string }> = {
+  info: { caixa: 'border-primaria bg-primaria-suave/60', icone: Info, cor: 'text-primaria' },
+  sucesso: {
+    caixa: 'border-sucesso bg-sucesso-suave/70',
+    icone: CheckCircle2,
+    cor: 'text-sucesso',
+  },
+  alerta: {
+    caixa: 'border-alerta-preenchimento bg-alerta-suave/70',
+    icone: AlertTriangle,
+    cor: 'text-alerta',
+  },
+  erro: { caixa: 'border-perigo bg-perigo-suave/70', icone: XCircle, cor: 'text-perigo' },
 };
 
 /**
@@ -33,17 +41,19 @@ export function Alert({
   className?: string;
   children?: ReactNode;
 }) {
-  const { caixa, icone: Icone } = ESTILOS[tom];
+  const { caixa, icone: Icone, cor } = ESTILOS[tom];
 
   return (
     <div
       role="alert"
-      className={cn('flex gap-3 rounded-lg border p-3 text-sm', caixa, className)}
+      // Faixa lateral em vez de caixa contornada: le-se como nota na margem, e
+      // nao compete com os cartoes ao redor.
+      className={cn('flex gap-3 rounded-md border-l-[3px] px-3 py-2.5 text-sm', caixa, className)}
     >
-      <Icone className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+      <Icone className={cn('mt-0.5 h-4 w-4 shrink-0', cor)} aria-hidden />
       <div className="min-w-0 space-y-1">
-        {titulo && <p className="font-semibold">{titulo}</p>}
-        {children && <div className="text-texto/80">{children}</div>}
+        {titulo && <p className={cn('font-semibold', cor)}>{titulo}</p>}
+        {children && <div className="text-texto">{children}</div>}
       </div>
     </div>
   );

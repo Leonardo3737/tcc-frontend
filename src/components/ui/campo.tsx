@@ -1,3 +1,4 @@
+import { AlertCircle } from 'lucide-react';
 import {
   forwardRef,
   useId,
@@ -6,7 +7,6 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react';
-import { AlertCircle } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -20,13 +20,15 @@ import { cn } from '@/lib/utils';
  */
 
 const CLASSE_CONTROLE =
-  'w-full rounded-lg border bg-superficie px-3 py-2 text-sm text-texto shadow-sm transition-colors ' +
+  'w-full rounded-md border bg-superficie px-3 py-2 text-sm text-texto transition-colors duration-150 ' +
   'placeholder:text-texto-suave/70 disabled:cursor-not-allowed disabled:opacity-60';
 
 function classesControle(temErro: boolean): string {
   return cn(
     CLASSE_CONTROLE,
-    temErro ? 'border-perigo focus-visible:ring-perigo' : 'border-borda hover:border-texto-suave/50',
+    temErro
+      ? 'border-perigo focus-visible:ring-perigo'
+      : 'border-borda-forte hover:border-texto-suave/60',
   );
 }
 
@@ -55,8 +57,8 @@ function EnvelopeCampo({
   children: ReactNode;
 }) {
   return (
-    <div className={cn('space-y-1.5', className)}>
-      <label htmlFor={idControle} className="block text-sm font-medium text-texto">
+    <div className={cn('', className)}>
+      <label htmlFor={idControle} className="block text-sm font-semibold text-texto">
         {label}
         {obrigatorio && (
           <span className="ml-0.5 text-perigo" aria-hidden>
@@ -85,8 +87,7 @@ function EnvelopeCampo({
 }
 
 export interface InputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'className'>,
-    PropsBaseCampo {}
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'className'>, PropsBaseCampo {}
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   { label, erro, ajuda, obrigatorio, className, id, ...props },
@@ -122,8 +123,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 });
 
 export interface TextareaProps
-  extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'className'>,
-    PropsBaseCampo {}
+  extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'className'>, PropsBaseCampo {}
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
   { label, erro, ajuda, obrigatorio, className, id, rows = 4, ...props },
@@ -165,8 +165,7 @@ export interface OpcaoSelect {
 }
 
 export interface SelectProps
-  extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'className' | 'children'>,
-    PropsBaseCampo {
+  extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'className' | 'children'>, PropsBaseCampo {
   opcoes: OpcaoSelect[];
   placeholder?: string;
 }

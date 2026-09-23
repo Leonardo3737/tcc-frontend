@@ -13,8 +13,8 @@ export default function PaginaLogin() {
   return (
     <Card>
       <CardConteudo className="space-y-6">
-        <div className="space-y-1.5 text-center">
-          <h1 className="text-xl font-semibold text-texto">Entrar na plataforma</h1>
+        <div className="space-y-1.5">
+          <h1 className="font-titulo text-titulo-pagina text-texto">Entrar na plataforma</h1>
           <p className="text-sm text-texto-suave">
             Use o seu e-mail institucional para acessar as suas monitorias.
           </p>

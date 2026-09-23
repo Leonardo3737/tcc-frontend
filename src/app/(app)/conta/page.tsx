@@ -10,10 +10,7 @@ export const metadata: Metadata = { title: 'Minha conta' };
 export default function PaginaConta() {
   return (
     <>
-      <CabecalhoPagina
-        titulo="Minha conta"
-        descricao="Seus dados de identidade na plataforma."
-      />
+      <CabecalhoPagina titulo="Minha conta" descricao="Seus dados de identidade na plataforma." />
 
       <div className="space-y-6">
         <Card>

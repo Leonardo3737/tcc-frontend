@@ -2,11 +2,11 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { GraduationCap, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 import { NavegacaoPrincipal } from './navegacao-principal';
 import { MenuUsuario } from './menu-usuario';
+import { Marca } from './marca';
 import { Button } from '@/components/ui/button';
 import { rotas } from '@/config/rotas';
 
@@ -18,6 +18,10 @@ import { rotas } from '@/config/rotas';
  * dialogo modal: prender o foco dentro dela atrapalharia mais do que ajudaria.
  * O essencial de acessibilidade — Escape para fechar, `aria-expanded`,
  * `aria-controls` e travar o scroll do fundo — esta implementado.
+ *
+ * A sidebar e o unico bloco em petroleo cheio da interface: ancora a
+ * identidade num lugar so e deixa a area de trabalho em neutros quentes, onde
+ * as cores de papel, status e disciplina precisam ser lidas sem concorrencia.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const [gavetaAberta, setGavetaAberta] = useState(false);
@@ -56,12 +60,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
 
       {/* ---------------- Sidebar (lg+) ---------------- */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-borda bg-superficie lg:flex">
-        <div className="flex h-14 items-center gap-2 border-b border-borda px-4">
-          <Marca />
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col bg-primaria-forte lg:flex">
+        <div className="flex h-16 items-center px-5">
+          <Marca href={rotas.inicio} sobreEscuro />
         </div>
-        <div className="flex-1 overflow-y-auto p-3">
-          <NavegacaoPrincipal />
+        <div className="flex-1 overflow-y-auto px-3 pb-4">
+          <NavegacaoPrincipal sobreEscuro />
         </div>
       </aside>
 
@@ -69,20 +73,21 @@ export function AppShell({ children }: { children: ReactNode }) {
       {gavetaAberta && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div
-            className="absolute inset-0 bg-texto/40 animate-fade-in"
+            className="absolute inset-0 animate-fade-in bg-texto/35"
             onClick={() => setGavetaAberta(false)}
             aria-hidden
           />
 
           <div
             id="gaveta-navegacao"
-            className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-borda bg-superficie shadow-xl"
+            className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] animate-surgir-baixo flex-col bg-primaria-forte shadow-flutuante"
           >
-            <div className="flex h-14 items-center justify-between border-b border-borda px-4">
-              <Marca />
+            <div className="flex h-14 items-center justify-between px-4">
+              <Marca href={rotas.inicio} sobreEscuro />
               <Button
                 variante="fantasma"
                 tamanho="icone"
+                className="text-white hover:bg-white/10"
                 onClick={() => setGavetaAberta(false)}
                 aria-label="Fechar menu"
               >
@@ -90,8 +95,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3">
-              <NavegacaoPrincipal aoNavegar={() => setGavetaAberta(false)} />
+            <div className="flex-1 overflow-y-auto px-3 pb-4">
+              <NavegacaoPrincipal sobreEscuro aoNavegar={() => setGavetaAberta(false)} />
             </div>
           </div>
         </div>
@@ -99,7 +104,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* ---------------- Conteudo ---------------- */}
       <div className="lg:pl-60">
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b border-borda bg-superficie/95 px-4 backdrop-blur">
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b border-borda bg-fundo px-4 sm:px-6">
           <div className="flex items-center gap-2">
             <Button
               variante="fantasma"
@@ -114,26 +119,20 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Button>
 
             <span className="lg:hidden">
-              <Marca compacta />
+              <Marca href={rotas.inicio} />
             </span>
           </div>
 
           <MenuUsuario />
         </header>
 
-        <main id="conteudo-principal" className="mx-auto w-full max-w-6xl p-4 sm:p-6">
+        <main
+          id="conteudo-principal"
+          className="mx-auto w-full max-w-6xl px-4 pb-12 pt-5 sm:px-6 sm:pt-7"
+        >
           {children}
         </main>
       </div>
     </div>
-  );
-}
-
-function Marca({ compacta = false }: { compacta?: boolean }) {
-  return (
-    <Link href={rotas.inicio} className="flex items-center gap-2 font-semibold text-texto">
-      <GraduationCap className="h-5 w-5 text-primaria" aria-hidden />
-      {!compacta && <span className="text-sm">Monitoria</span>}
-    </Link>
   );
 }

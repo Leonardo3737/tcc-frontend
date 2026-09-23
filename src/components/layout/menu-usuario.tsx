@@ -25,12 +25,12 @@ export function MenuUsuario() {
       <DropdownTrigger asChild>
         <button
           type="button"
-          className="alvo-toque flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-fundo"
+          className="alvo-toque flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-fundo-suave"
           aria-label={`Menu da conta de ${usuario.nome}`}
         >
           <span
             aria-hidden
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primaria-suave text-xs font-semibold text-primaria"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primaria text-xs font-semibold text-primaria-contraste"
           >
             {iniciais(usuario.nome)}
           </span>
@@ -60,7 +60,7 @@ export function MenuUsuario() {
         */}
         <div className="flex flex-wrap gap-1 px-2.5 pb-2">
           {usuario.perfis.map((perfil) => (
-            <Badge key={perfil} tom={perfil === 'PROFESSOR' ? 'primaria' : 'neutro'}>
+            <Badge key={perfil} tom="neutro">
               {perfil === 'PROFESSOR' ? 'Professor' : 'Aluno'}
             </Badge>
           ))}

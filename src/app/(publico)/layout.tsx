@@ -1,6 +1,4 @@
-import Link from 'next/link';
-import { GraduationCap } from 'lucide-react';
-
+import { Marca } from '@/components/layout/marca';
 import { rotas } from '@/config/rotas';
 
 /**
@@ -12,11 +10,8 @@ import { rotas } from '@/config/rotas';
 export default function LayoutPublico({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-fundo">
-      <header className="flex h-14 items-center px-4 sm:px-6">
-        <Link href={rotas.login} className="flex items-center gap-2 font-semibold text-texto">
-          <GraduationCap className="h-5 w-5 text-primaria" aria-hidden />
-          <span className="text-sm">Monitoria</span>
-        </Link>
+      <header className="flex h-16 items-center px-4 sm:px-6">
+        <Marca href={rotas.login} />
       </header>
 
       <main className="flex flex-1 items-center justify-center px-4 py-8">

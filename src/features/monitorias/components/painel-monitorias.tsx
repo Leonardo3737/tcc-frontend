@@ -11,7 +11,7 @@ import { EstadoErro, EstadoVazio } from '@/components/ui/estados';
 import { SkeletonLista } from '@/components/ui/skeleton';
 import { CampoBusca } from '@/components/comum/campo-busca';
 import { Paginacao } from '@/components/comum/paginacao';
-import { CartaoMonitoria } from './cartao-monitoria';
+import { CartaoMonitoria, SkeletonCartaoMonitoria } from './cartao-monitoria';
 import { listarMinhasMonitorias, listarMonitorias } from '../api/monitorias.service';
 import { useFiltrosUrl } from '@/hooks/use-filtros-url';
 import { useSessao } from '@/providers/sessao-provider';
@@ -124,7 +124,7 @@ function VisaoMinhas({
         ]}
       />
 
-      {consulta.isPending && <SkeletonLista itens={3} />}
+      {consulta.isPending && <SkeletonLista itens={3} item={SkeletonCartaoMonitoria} />}
 
       {consulta.isError && (
         <EstadoErro erro={consulta.error} aoTentarNovamente={() => void consulta.refetch()} />
@@ -224,7 +224,7 @@ function VisaoExplorar({
         />
       </div>
 
-      {consulta.isPending && <SkeletonLista itens={3} />}
+      {consulta.isPending && <SkeletonLista itens={3} item={SkeletonCartaoMonitoria} />}
 
       {consulta.isError && (
         <EstadoErro erro={consulta.error} aoTentarNovamente={() => void consulta.refetch()} />

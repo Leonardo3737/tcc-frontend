@@ -26,7 +26,7 @@ export function DropdownConteudo({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          'z-50 min-w-52 overflow-hidden rounded-lg border border-borda bg-superficie p-1 shadow-lg',
+          'z-50 min-w-52 overflow-hidden rounded-card border border-borda bg-superficie p-1 shadow-flutuante',
           'animate-fade-in',
           className,
         )}
@@ -45,8 +45,8 @@ export function DropdownItem({
     <DropdownPrimitive.Item
       className={cn(
         'flex cursor-pointer select-none items-center gap-2 rounded-md px-2.5 py-2 text-sm outline-none transition-colors',
-        'data-[highlighted]:bg-fundo data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-        destrutivo ? 'text-perigo data-[highlighted]:bg-perigo/10' : 'text-texto',
+        'data-[disabled]:pointer-events-none data-[highlighted]:bg-fundo-suave data-[disabled]:opacity-50',
+        destrutivo ? 'text-perigo data-[highlighted]:bg-perigo-suave' : 'text-texto',
         className,
       )}
       {...props}
@@ -58,9 +58,7 @@ export function DropdownSeparador({
   className,
   ...props
 }: ComponentPropsWithoutRef<typeof DropdownPrimitive.Separator>) {
-  return (
-    <DropdownPrimitive.Separator className={cn('my-1 h-px bg-borda', className)} {...props} />
-  );
+  return <DropdownPrimitive.Separator className={cn('my-1 h-px bg-borda', className)} {...props} />;
 }
 
 export function DropdownRotulo({

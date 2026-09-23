@@ -23,10 +23,9 @@ export function TabsLista({
   return (
     <TabsPrimitive.List
       className={cn(
-        'flex gap-1 overflow-x-auto border-b border-borda',
-        // A barra some no desktop; no mobile o scroll horizontal e o proprio
-        // affordance de que ha mais abas.
-        '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        'rolagem-discreta flex gap-1 overflow-x-auto border-b border-borda',
+        // A barra some; no mobile o scroll horizontal e o proprio affordance
+        // de que ha mais abas.
         className,
       )}
       {...props}
@@ -41,9 +40,9 @@ export function TabsGatilho({
   return (
     <TabsPrimitive.Trigger
       className={cn(
-        'alvo-toque shrink-0 whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-sm font-medium',
-        'text-texto-suave transition-colors hover:text-texto',
-        'data-[state=active]:border-primaria data-[state=active]:text-primaria',
+        'alvo-toque -mb-px shrink-0 whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-sm font-semibold',
+        'text-texto-suave transition-colors duration-150 hover:text-texto',
+        'data-[state=active]:border-primaria data-[state=active]:text-texto',
         className,
       )}
       {...props}

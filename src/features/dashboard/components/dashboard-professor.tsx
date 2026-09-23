@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { CalendarCheck, GraduationCap, Plus, Star, UserCheck, Users } from 'lucide-react';
+import { GraduationCap, Plus, Users } from 'lucide-react';
 
 import { classesBotao } from '@/components/ui/button';
 import { Card, CardCabecalho, CardConteudo } from '@/components/ui/card';
@@ -13,7 +13,9 @@ import {
   BarrasPorStatus,
   CORES_STATUS_ATENDIMENTO,
   CORES_STATUS_MONITORIA,
+  FaixaIndicadores,
   Indicador,
+  SkeletonFaixaIndicadores,
 } from '@/components/comum/indicador';
 import { CartaoMonitoria } from '@/features/monitorias/components/cartao-monitoria';
 import { buscarIndicadoresPlataforma } from '@/features/analytics/api/analytics.service';
@@ -46,13 +48,7 @@ export function DashboardProfessor() {
           Suas monitorias em números
         </h2>
 
-        {indicadores.isPending && (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[0, 1, 2, 3].map((indice) => (
-              <SkeletonCard key={indice} />
-            ))}
-          </div>
-        )}
+        {indicadores.isPending && <SkeletonFaixaIndicadores />}
 
         {indicadores.isError && (
           <EstadoErro
@@ -63,30 +59,20 @@ export function DashboardProfessor() {
 
         {indicadores.isSuccess && (
           <>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Indicador
-                rotulo="Monitorias"
-                valor={indicadores.data.monitorias.total}
-                icone={<GraduationCap className="h-4 w-4" aria-hidden />}
-              />
-              <Indicador
-                rotulo="Atendimentos"
-                valor={indicadores.data.atendimentos.total}
-                icone={<CalendarCheck className="h-4 w-4" aria-hidden />}
-              />
+            <FaixaIndicadores>
+              <Indicador rotulo="Monitorias" valor={indicadores.data.monitorias.total} />
+              <Indicador rotulo="Atendimentos" valor={indicadores.data.atendimentos.total} />
               <Indicador
                 rotulo="Alunos atendidos"
                 valor={indicadores.data.alunosAtendidos}
                 detalhe="Com presença confirmada"
-                icone={<UserCheck className="h-4 w-4" aria-hidden />}
               />
               <Indicador
                 rotulo="Média das avaliações"
                 valor={indicadores.data.mediaAvaliacoes?.toFixed(1) ?? '—'}
                 detalhe={`${indicadores.data.totalAvaliacoes} avaliação(ões)`}
-                icone={<Star className="h-4 w-4" aria-hidden />}
               />
-            </div>
+            </FaixaIndicadores>
 
             <div className="grid gap-4 lg:grid-cols-3">
               <Card>
@@ -120,9 +106,7 @@ export function DashboardProfessor() {
                         <Users className="h-3.5 w-3.5" aria-hidden />
                         Monitores ativos
                       </dt>
-                      <dd className="font-medium text-texto">
-                        {indicadores.data.monitoresAtivos}
-                      </dd>
+                      <dd className="font-medium text-texto">{indicadores.data.monitoresAtivos}</dd>
                     </div>
 
                     <div className="flex items-center justify-between gap-2">
@@ -141,8 +125,8 @@ export function DashboardProfessor() {
                   </dl>
 
                   <p className="mt-3 text-xs text-texto-suave">
-                    Monitor e monitorado são vínculos por monitoria — a mesma pessoa pode
-                    aparecer nos dois grupos, em ofertas diferentes.
+                    Monitor e monitorado são vínculos por monitoria — a mesma pessoa pode aparecer
+                    nos dois grupos, em ofertas diferentes.
                   </p>
                 </CardConteudo>
               </Card>
