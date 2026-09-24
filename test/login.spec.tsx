@@ -220,3 +220,58 @@ describe('acessibilidade do login', () => {
     expect(document.getElementById(idDescricao!)).toHaveTextContent(/e-mail válido/i);
   });
 });
+
+/**
+ * Affordances do campo de senha.
+ *
+ * Nenhuma delas muda o que e enviado: `name`, valor e validacao seguem iguais.
+ * Sao ajudas visuais — e por isso os testes olham para tipo do input, rotulo do
+ * botao e ordem de foco, nunca para o corpo da requisicao.
+ */
+describe('campo de senha', () => {
+  it('alterna a exibicao sem alterar o campo enviado', async () => {
+    const usuario = userEvent.setup();
+    renderizar(<FormularioLogin />);
+
+    const senha = screen.getByLabelText(/^senha/i);
+    await usuario.type(senha, 'minhaSenha123');
+
+    expect(senha).toHaveAttribute('type', 'password');
+    expect(senha).toHaveAttribute('name', 'senha');
+
+    await usuario.click(screen.getByRole('button', { name: /mostrar caracteres/i }));
+    expect(senha).toHaveAttribute('type', 'text');
+    expect(senha).toHaveValue('minhaSenha123');
+
+    await usuario.click(screen.getByRole('button', { name: /ocultar caracteres/i }));
+    expect(senha).toHaveAttribute('type', 'password');
+    // O `name` é o que o formulário envia — ele não pode mudar nunca.
+    expect(senha).toHaveAttribute('name', 'senha');
+  });
+
+  it('o botao de exibicao fica fora da ordem de tabulacao', async () => {
+    const usuario = userEvent.setup();
+    renderizar(<FormularioLogin />);
+
+    screen.getByLabelText(/^senha/i).focus();
+    await usuario.tab();
+
+    // Tab a partir da senha deve chegar ao Entrar, não ao olho.
+    expect(screen.getByRole('button', { name: /entrar/i })).toHaveFocus();
+  });
+
+  it('avisa sobre Caps Lock e liga o aviso ao campo', async () => {
+    const usuario = userEvent.setup();
+    renderizar(<FormularioLogin />);
+
+    const senha = screen.getByLabelText(/^senha/i);
+    senha.focus();
+    await usuario.keyboard('{CapsLock}a');
+
+    const aviso = await screen.findByText(/caps lock/i);
+    expect(aviso).toHaveAttribute('aria-live', 'polite');
+    expect(senha.getAttribute('aria-describedby')).toContain(aviso.id);
+
+    await usuario.keyboard('{CapsLock}');
+  });
+});

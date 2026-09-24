@@ -57,7 +57,10 @@ function EnvelopeCampo({
   children: ReactNode;
 }) {
   return (
-    <div className={cn('', className)}>
+    // `space-y-1.5` separa rotulo, controle e mensagem. Sem isto os tres ficam
+    // colados e o campo parece um bloco unico — o texto de ajuda, em especial,
+    // se confunde com o valor digitado.
+    <div className={cn('space-y-1.5', className)}>
       <label htmlFor={idControle} className="block text-sm font-semibold text-texto">
         {label}
         {obrigatorio && (
@@ -87,16 +90,30 @@ function EnvelopeCampo({
 }
 
 export interface InputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'className'>, PropsBaseCampo {}
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'className'>,
+    PropsBaseCampo {
+  /**
+   * Controle ancorado a direita, dentro da moldura do campo (ex.: alternar a
+   * exibicao da senha). Fica fora do fluxo, entao o input ganha respiro a
+   * direita para o texto nao passar por baixo.
+   */
+  sufixo?: ReactNode;
+  /** Ids extras para `aria-describedby` — avisos que acompanham o campo. */
+  descritoPor?: string;
+}
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { label, erro, ajuda, obrigatorio, className, id, ...props },
+  { label, erro, ajuda, obrigatorio, className, id, sufixo, descritoPor, ...props },
   ref,
 ) {
   const gerado = useId();
   const idControle = id ?? gerado;
   const idErro = `${idControle}-erro`;
   const idAjuda = `${idControle}-ajuda`;
+
+  const descricoes = [erro ? idErro : ajuda ? idAjuda : null, descritoPor]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <EnvelopeCampo
@@ -109,15 +126,21 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       idAjuda={idAjuda}
       className={className}
     >
-      <input
-        ref={ref}
-        id={idControle}
-        aria-invalid={erro ? true : undefined}
-        aria-describedby={erro ? idErro : ajuda ? idAjuda : undefined}
-        aria-required={obrigatorio || undefined}
-        className={cn(classesControle(Boolean(erro)), 'alvo-toque')}
-        {...props}
-      />
+      <div className="relative">
+        <input
+          ref={ref}
+          id={idControle}
+          aria-invalid={erro ? true : undefined}
+          aria-describedby={descricoes || undefined}
+          aria-required={obrigatorio || undefined}
+          className={cn(classesControle(Boolean(erro)), 'alvo-toque', sufixo && 'pr-11')}
+          {...props}
+        />
+
+        {sufixo && (
+          <div className="absolute inset-y-0 right-1 flex items-center">{sufixo}</div>
+        )}
+      </div>
     </EnvelopeCampo>
   );
 });

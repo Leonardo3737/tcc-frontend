@@ -3,11 +3,12 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSearchParams } from 'next/navigation';
-import { LogIn } from 'lucide-react';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/campo';
 import { Alert } from '@/components/ui/alert';
+import { CampoSenha } from './campo-senha';
 import { esquemaLogin, type DadosLogin } from '../schemas/login.schema';
 import { useLogin } from '../hooks/use-login';
 import { ApiError } from '@/lib/api/erros';
@@ -40,11 +41,7 @@ export function FormularioLogin() {
   const excedeuTentativas = login.error instanceof ApiError && login.error.ehExcessoDeRequisicoes;
 
   return (
-    <form
-      onSubmit={handleSubmit((dados) => login.mutate(dados))}
-      className="space-y-4"
-      noValidate
-    >
+    <form onSubmit={handleSubmit((dados) => login.mutate(dados))} className="space-y-4" noValidate>
       {sessaoExpirou && !errors.root && (
         <Alert tom="alerta" titulo="Sua sessão expirou">
           Entre novamente para continuar de onde parou.
@@ -57,7 +54,10 @@ export function FormularioLogin() {
         Requests". Aqui so ajustamos o TITULO, que depende do contexto da tela.
       */}
       {errors.root && (
-        <Alert tom="erro" titulo={excedeuTentativas ? 'Muitas tentativas' : 'Não foi possível entrar'}>
+        <Alert
+          tom="erro"
+          titulo={excedeuTentativas ? 'Muitas tentativas' : 'Não foi possível entrar'}
+        >
           {errors.root.message}
         </Alert>
       )}
@@ -70,15 +70,15 @@ export function FormularioLogin() {
         autoFocus
         placeholder="voce@instituicao.edu.br"
         obrigatorio
+        ajuda="O mesmo endereço que você usa nos sistemas da instituição."
         erro={errors.email?.message}
         {...register('email')}
       />
 
-      <Input
+      <CampoSenha
         label="Senha"
-        type="password"
         autoComplete="current-password"
-        placeholder="••••••••"
+        placeholder="Sua senha de acesso"
         obrigatorio
         erro={errors.senha?.message}
         {...register('senha')}
@@ -89,10 +89,20 @@ export function FormularioLogin() {
         carregando={enviando}
         className="w-full"
         tamanho="lg"
-        iconeEsquerda={<LogIn className="h-4 w-4" aria-hidden />}
+        iconeDireita={!enviando ? <ArrowRight className="h-4 w-4" aria-hidden /> : undefined}
       >
         {enviando ? 'Entrando…' : 'Entrar'}
       </Button>
+
+      {/*
+        Dito na tela porque e verdade e porque tranquiliza: a sessao vive num
+        cookie httpOnly, e o token nunca fica acessivel ao JavaScript da pagina
+        (ver docs/decisoes-arquiteturais.md, AD-F01).
+      */}
+      <p className="flex items-start gap-2 text-xs text-texto-suave">
+        <ShieldCheck className="mt-px h-3.5 w-3.5 shrink-0 text-sucesso" aria-hidden />
+        Sua sessão fica protegida em um cookie seguro e expira sozinha após 8 horas.
+      </p>
     </form>
   );
 }

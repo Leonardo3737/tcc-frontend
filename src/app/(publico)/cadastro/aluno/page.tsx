@@ -9,7 +9,8 @@ export const metadata: Metadata = { title: 'Cadastro de aluno' };
 
 export default function PaginaCadastroAluno() {
   return (
-    <Card>
+    // A largura estreita agora e escolha da pagina — ver o layout publico.
+    <Card className="w-full max-w-md">
       <CardConteudo className="space-y-6">
         <div className="space-y-1.5">
           <h1 className="font-titulo text-titulo-pagina text-texto">Criar conta de aluno</h1>
