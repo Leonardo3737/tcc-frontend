@@ -7,6 +7,7 @@ import { Menu, X } from 'lucide-react';
 import { NavegacaoPrincipal } from './navegacao-principal';
 import { MenuUsuario } from './menu-usuario';
 import { Marca } from './marca';
+import { AtalhosMonitorias } from './atalhos-monitorias';
 import { Button } from '@/components/ui/button';
 import { rotas } from '@/config/rotas';
 
@@ -60,12 +61,21 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
 
       {/* ---------------- Sidebar (lg+) ---------------- */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col bg-primaria-forte lg:flex">
-        <div className="flex h-16 items-center px-5">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-primaria-forte lg:flex">
+        <div className="flex h-16 shrink-0 items-center px-5">
           <Marca href={rotas.inicio} sobreEscuro />
         </div>
-        <div className="flex-1 overflow-y-auto px-3 pb-4">
+
+        <div className="rolagem-discreta flex-1 space-y-6 overflow-y-auto px-3 pb-4 pt-2">
           <NavegacaoPrincipal sobreEscuro />
+          <div className="border-t border-white/10 pt-5">
+            <AtalhosMonitorias />
+          </div>
+        </div>
+
+        {/* A conta mora no rodape: e onde se procura "quem estou usando" e "sair". */}
+        <div className="shrink-0 border-t border-white/10 p-3">
+          <MenuUsuario variante="lateral" />
         </div>
       </aside>
 
@@ -95,21 +105,24 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-3 pb-4">
+            <div className="flex-1 space-y-6 overflow-y-auto px-3 pb-4 pt-2">
               <NavegacaoPrincipal sobreEscuro aoNavegar={() => setGavetaAberta(false)} />
+              <div className="border-t border-white/10 pt-5">
+                <AtalhosMonitorias aoNavegar={() => setGavetaAberta(false)} />
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {/* ---------------- Conteudo ---------------- */}
-      <div className="lg:pl-60">
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b border-borda bg-fundo px-4 sm:px-6">
+      <div className="lg:pl-64">
+        {/* No desktop a sidebar ja tem marca e conta: a barra superior so existe no celular. */}
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b border-borda bg-fundo px-4 sm:px-6 lg:hidden">
           <div className="flex items-center gap-2">
             <Button
               variante="fantasma"
               tamanho="icone"
-              className="lg:hidden"
               onClick={() => setGavetaAberta(true)}
               aria-label="Abrir menu"
               aria-expanded={gavetaAberta}
@@ -118,9 +131,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Menu className="h-5 w-5" aria-hidden />
             </Button>
 
-            <span className="lg:hidden">
-              <Marca href={rotas.inicio} />
-            </span>
+            <Marca href={rotas.inicio} />
           </div>
 
           <MenuUsuario />

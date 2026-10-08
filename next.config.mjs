@@ -15,6 +15,9 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   output: 'standalone',
+  // O indicador de desenvolvimento ficaria sobre o bloco da conta, no rodape
+  // da sidebar. So existe em `next dev`.
+  devIndicators: { position: 'bottom-right' },
 
   async headers() {
     return [

@@ -28,25 +28,44 @@ export interface ItemNavegacao {
   perfis?: PerfilUsuario[];
   /** Marca o item como ativo tambem nas sub-rotas (ex.: /monitorias/:id). */
   casaPrefixo?: boolean;
+  grupo: GrupoNavegacao;
 }
+
+/**
+ * Grupos do menu, na ordem em que aparecem.
+ *
+ * Separar "o meu dia a dia" de "o que eu administro" deixa o menu escaneavel
+ * mesmo quando a pessoa acumula ALUNO e PROFESSOR — e um grupo sem itens
+ * visiveis simplesmente nao e renderizado.
+ */
+export const GRUPOS_NAVEGACAO = [
+  { chave: 'rotina', rotulo: null },
+  { chave: 'gestao', rotulo: 'Gestão' },
+  { chave: 'comunidade', rotulo: 'Comunidade' },
+] as const;
+
+export type GrupoNavegacao = (typeof GRUPOS_NAVEGACAO)[number]['chave'];
 
 export const ITENS_NAVEGACAO: ItemNavegacao[] = [
   {
     rotulo: 'Início',
     href: rotas.inicio,
     icone: LayoutDashboard,
+    grupo: 'rotina',
   },
   {
     rotulo: 'Monitorias',
     href: rotas.monitorias,
     icone: GraduationCap,
     casaPrefixo: true,
+    grupo: 'rotina',
   },
   {
     rotulo: 'Meus atendimentos',
     href: rotas.atendimentos,
     icone: CalendarDays,
     casaPrefixo: true,
+    grupo: 'rotina',
   },
   {
     rotulo: 'Disciplinas',
@@ -54,11 +73,13 @@ export const ITENS_NAVEGACAO: ItemNavegacao[] = [
     icone: BookOpen,
     // Só PROFESSOR cria e edita o catálogo (backend: @Perfis(PROFESSOR)).
     perfis: [PerfilUsuario.PROFESSOR],
+    grupo: 'gestao',
   },
   {
     rotulo: 'Ranking',
     href: rotas.ranking,
     icone: Trophy,
+    grupo: 'comunidade',
   },
 ];
 

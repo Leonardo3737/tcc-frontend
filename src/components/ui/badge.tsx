@@ -171,7 +171,7 @@ export const CORES_PAPEL = {
   },
 } as const;
 
-const ICONE_PAPEL = {
+export const ICONE_PAPEL = {
   [PapelMonitoria.MONITOR]: Presentation,
   [PapelMonitoria.MONITORADO]: BookOpen,
   responsavel: Briefcase,
