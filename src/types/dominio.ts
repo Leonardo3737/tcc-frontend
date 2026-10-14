@@ -119,6 +119,11 @@ export interface Usuario {
   aluno?: DadosAluno;
   professor?: DadosProfessor;
   criadoEm: string;
+  /**
+   * Professor que criou a conta. null = criada fora da API (o primeiro
+   * professor, via `npm run criar-professor`, ou contas anteriores a regra).
+   */
+  criadoPorUsuarioId?: string | null;
 }
 
 export interface RespostaLogin {

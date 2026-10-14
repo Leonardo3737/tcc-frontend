@@ -19,10 +19,10 @@ npm run test:integracao
 
 ## O que cada script cobre
 
-| Script | Verificações |
-|---|---|
+| Script             | Verificações                                                                                                                                                                                                                                                                                                    |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `fluxo-dominio.py` | 27 — ciclo completo: disciplina → monitoria → ativação → habilitação de monitor (RN01) → disponibilidade → agendamento → conflitos (RN03) → reagendamento → materiais (RN08) → indicadores. Inclui os 409 que **são** as regras: RN09, RN03, horário fora da disponibilidade, encerrar com atendimento agendado |
-| `seguranca.py` | 27 — os quatro cenários de sessão (professor, aluno, não autenticado, token forjado), atributos do cookie, tentativa de forjar `Authorization` no proxy, autorização por perfil e por participação (RN01, RN07), logout e sanidade das respostas de erro |
+| `seguranca.py`     | 27 — os quatro cenários de sessão (professor, aluno, não autenticado, token forjado), atributos do cookie, tentativa de forjar `Authorization` no proxy, autorização por perfil e por participação (RN01, RN07), logout e sanidade das respostas de erro                                                        |
 
 ## Por que Python e não Playwright
 

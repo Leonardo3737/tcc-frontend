@@ -43,6 +43,19 @@ export function temPerfil(usuario: Usuario | null, ...perfis: PerfilUsuario[]): 
 export const ehAluno = (usuario: Usuario | null) => temPerfil(usuario, PerfilUsuario.ALUNO);
 export const ehProfessor = (usuario: Usuario | null) => temPerfil(usuario, PerfilUsuario.PROFESSOR);
 
+/**
+ * Criar contas (alunos e professores) — espelha `@Perfis(PROFESSOR)` em
+ * POST /alunos e POST /professores. Nao existe auto-cadastro: enquanto nao ha
+ * perfil ADMIN, sao os professores que administram as contas da plataforma.
+ */
+export const podeCadastrarUsuarios = (usuario: Usuario | null) => ehProfessor(usuario);
+
+/**
+ * Listar alunos e consultar o perfil de qualquer aluno — `@Perfis(PROFESSOR)`
+ * em GET /alunos; GET /alunos/:id aceita tambem o proprio aluno.
+ */
+export const podeListarAlunos = (usuario: Usuario | null) => ehProfessor(usuario);
+
 // ---------------------------------------------------------------------------
 // Contexto de monitoria (espelha o ParticipacaoGuard)
 // ---------------------------------------------------------------------------

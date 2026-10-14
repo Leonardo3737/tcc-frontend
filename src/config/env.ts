@@ -79,9 +79,7 @@ export function problemasDePoliticaDeProducao(valores = env): string[] {
   }
 
   if (/localhost|127\.0\.0\.1/.test(valores.API_URL)) {
-    problemas.push(
-      `API_URL aponta para ${valores.API_URL}. Configure o endereco real do backend.`,
-    );
+    problemas.push(`API_URL aponta para ${valores.API_URL}. Configure o endereco real do backend.`);
   }
 
   return problemas;

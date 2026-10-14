@@ -13,8 +13,8 @@ import { ApiError, mensagemDeErro, separarErrosPorCampo } from './erros';
  *    precisa continuar lendo enquanto ajusta o formulario;
  *  - demais: `root`, com o texto ja tratado por `mensagemDeErro`.
  *
- * `camposEspeciais` permite direcionar um status para um campo — por exemplo, o
- * 403 do cadastro de professor, que sempre significa "codigo de cadastro errado".
+ * `camposEspeciais` permite direcionar um status inteiro para um campo, quando
+ * aquele status so pode significar um problema naquele campo.
  */
 export function aplicarErroDeFormulario<T extends FieldValues>(
   erro: unknown,

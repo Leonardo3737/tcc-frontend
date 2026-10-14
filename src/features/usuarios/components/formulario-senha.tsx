@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
@@ -12,6 +13,7 @@ import { Alert } from '@/components/ui/alert';
 import { toast } from '@/components/ui/toast';
 import { alterarSenha } from '../api/usuarios.service';
 import { ApiError } from '@/lib/api/erros';
+import { rotas } from '@/config/rotas';
 
 /**
  * Espelha backend/src/modules/usuarios/dto/alterar-senha.dto.ts, mais a regra
@@ -97,6 +99,20 @@ export function FormularioSenha() {
         erro={errors.senhaAtual?.message}
         {...register('senhaAtual')}
       />
+
+      {/*
+        Trocar a senha aqui exige a atual. Quem nao lembra dela tem outro
+        caminho: o codigo por e-mail, que nao depende da senha antiga.
+      */}
+      <p className="-mt-2 text-sm text-texto-suave">
+        Não lembra a senha atual?{' '}
+        <Link
+          href={rotas.recuperarSenha}
+          className="rounded font-semibold text-primaria hover:underline"
+        >
+          Redefinir por e-mail
+        </Link>
+      </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Input

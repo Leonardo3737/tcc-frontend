@@ -95,8 +95,7 @@ export function FormularioPerfil() {
     onError: (erro: unknown) => {
       setError('root', {
         type: 'server',
-        message:
-          erro instanceof ApiError ? erro.message : 'Não foi possível salvar as alterações.',
+        message: erro instanceof ApiError ? erro.message : 'Não foi possível salvar as alterações.',
       });
     },
   });

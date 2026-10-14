@@ -111,7 +111,10 @@ export function PainelDisciplinas() {
           }
           acao={
             !busca && (
-              <Button onClick={abrirCriacao} iconeEsquerda={<Plus className="h-4 w-4" aria-hidden />}>
+              <Button
+                onClick={abrirCriacao}
+                iconeEsquerda={<Plus className="h-4 w-4" aria-hidden />}
+              >
                 Nova disciplina
               </Button>
             )

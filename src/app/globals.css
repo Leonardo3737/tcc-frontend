@@ -127,3 +127,8 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Oculta o botão de exibir senha no Microsoft Edge */
+input[type="password"]::-ms-reveal {
+  display: none;
+}

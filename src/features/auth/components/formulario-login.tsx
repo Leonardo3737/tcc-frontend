@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSearchParams } from 'next/navigation';
@@ -12,6 +13,7 @@ import { CampoSenha } from './campo-senha';
 import { esquemaLogin, type DadosLogin } from '../schemas/login.schema';
 import { useLogin } from '../hooks/use-login';
 import { ApiError } from '@/lib/api/erros';
+import { rotas } from '@/config/rotas';
 
 export function FormularioLogin() {
   const parametros = useSearchParams();
@@ -93,6 +95,20 @@ export function FormularioLogin() {
       >
         {enviando ? 'Entrando…' : 'Entrar'}
       </Button>
+
+      {/*
+        Depois do botao, e nao entre a senha e ele: partindo da senha, o Tab
+        deve chegar em "Entrar" (ver CampoSenha). Link, e nao botao — leva a
+        outra pagina.
+      */}
+      <p className="text-center text-sm">
+        <Link
+          href={rotas.recuperarSenha}
+          className="rounded font-semibold text-primaria hover:underline"
+        >
+          Esqueceu a senha?
+        </Link>
+      </p>
 
       {/*
         Dito na tela porque e verdade e porque tranquiliza: a sessao vive num

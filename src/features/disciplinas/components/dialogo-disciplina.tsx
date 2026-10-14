@@ -25,9 +25,9 @@ import type { Disciplina } from '@/types/dominio';
 /**
  * Criacao e edicao no mesmo dialogo.
  *
- * O que muda entre os dois nao e o layout, e sim o CONJUNTO DE CAMPOS EDITAVEIS:
- * na edicao o `codigo` vira leitura e aparece o controle de ativacao. Dois
- * componentes separados repetiriam o formulario inteiro para expressar isso.
+ * O que muda entre os dois nao e o layout, e sim o CONJUNTO DE CAMPOS: na
+ * criacao so ha o nome (o `codigo` e gerado pelo servidor); na edicao o codigo
+ * aparece como leitura e surge o controle de ativacao.
  */
 export function DialogoDisciplina({
   aberto,
@@ -50,7 +50,7 @@ export function DialogoDisciplina({
           descricao={
             editando
               ? 'O código não pode ser alterado: monitorias já criadas o referenciam.'
-              : 'O catálogo dá nome e código às monitorias.'
+              : 'Informe o nome. O código é gerado automaticamente a partir dele (ex.: CAL001).'
           }
         >
           {editando ? (
@@ -92,40 +92,42 @@ function FormularioCriacao({
   } = useForm<DadosCriarDisciplina>({
     resolver: zodResolver(esquemaCriarDisciplina),
     mode: 'onBlur',
-    defaultValues: { codigo: '', nome: '' },
+    defaultValues: { nome: '' },
   });
 
   const mutacao = useMutation({
     mutationFn: criarDisciplina,
     onSuccess: (disciplina) => {
-      toast.sucesso('Disciplina cadastrada', `${disciplina.codigo} — ${disciplina.nome}`);
+      // O codigo so existe depois de criar: o toast e onde a pessoa o ve pela
+      // primeira vez.
+      toast.sucesso(
+        'Disciplina cadastrada',
+        `Código gerado: ${disciplina.codigo} — ${disciplina.nome}`,
+      );
       aoConcluir();
     },
-    // 409 aqui e sempre codigo duplicado (`disciplinas_codigo_key`), e o backend
-    // ja devolve a mensagem pronta para exibir.
+    // Com o codigo gerado pelo servidor nao ha mais 409 de codigo repetido
+    // vindo do formulario; se o servidor nao achar um codigo livre, a mensagem
+    // dele (ja pronta para exibir) vai para o topo do formulario.
     onError: (erro) => aplicarErroDeFormulario(erro, setError, CAMPOS_DISCIPLINA),
   });
 
   const enviando = isSubmitting || mutacao.isPending;
 
   return (
-    <form onSubmit={handleSubmit((dados) => mutacao.mutate(dados))} className="space-y-4" noValidate>
+    <form
+      onSubmit={handleSubmit((dados) => mutacao.mutate(dados))}
+      className="space-y-4"
+      noValidate
+    >
       {errors.root && <Alert tom="erro">{errors.root.message}</Alert>}
-
-      <Input
-        label="Código"
-        placeholder="MAT101"
-        autoFocus
-        obrigatorio
-        ajuda="Identificador estável da disciplina. Não poderá ser alterado depois."
-        erro={errors.codigo?.message}
-        {...register('codigo')}
-      />
 
       <Input
         label="Nome"
         placeholder="Cálculo I"
+        autoFocus
         obrigatorio
+        ajuda="O código (ex.: CAL001) é gerado a partir do nome e não muda depois, mesmo se você renomear."
         erro={errors.nome?.message}
         {...register('nome')}
       />
@@ -181,7 +183,11 @@ function FormularioEdicao({
   const enviando = isSubmitting || mutacao.isPending;
 
   return (
-    <form onSubmit={handleSubmit((dados) => mutacao.mutate(dados))} className="space-y-4" noValidate>
+    <form
+      onSubmit={handleSubmit((dados) => mutacao.mutate(dados))}
+      className="space-y-4"
+      noValidate
+    >
       {errors.root && <Alert tom="erro">{errors.root.message}</Alert>}
 
       <Input
@@ -203,8 +209,8 @@ function FormularioEdicao({
         <span className="text-sm">
           <span className="font-medium text-texto">Disciplina ativa</span>
           <span className="mt-0.5 block text-xs text-texto-suave">
-            Desativar impede a criação de novas monitorias, mas preserva todo o histórico —
-            nada é apagado.
+            Desativar impede a criação de novas monitorias, mas preserva todo o histórico — nada é
+            apagado.
           </span>
         </span>
       </label>

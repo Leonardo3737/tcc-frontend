@@ -36,9 +36,7 @@ describe('montagem de query string', () => {
    * Serializar como "A,B" seria recusado pelo @IsEnum(..., { each: true }).
    */
   it('repete a chave para cada item do array', () => {
-    expect(montarQuery({ status: ['ATIVA', 'ENCERRADA'] })).toBe(
-      '?status=ATIVA&status=ENCERRADA',
-    );
+    expect(montarQuery({ status: ['ATIVA', 'ENCERRADA'] })).toBe('?status=ATIVA&status=ENCERRADA');
   });
 
   it('serializa booleano como texto', () => {
@@ -87,7 +85,9 @@ describe('cliente HTTP', () => {
       ),
     );
 
-    const falha = (await cliente.post('/atendimentos/x/inscricao').catch((e: unknown) => e)) as ApiError;
+    const falha = (await cliente
+      .post('/atendimentos/x/inscricao')
+      .catch((e: unknown) => e)) as ApiError;
 
     expect(falha).toBeInstanceOf(ApiError);
     expect(falha.ehConflito).toBe(true);

@@ -189,7 +189,7 @@ toast — o texto precisa continuar visível enquanto o usuário corrige o formu
 ```
 src/
 ├── app/
-│   ├── (publico)/        login, cadastro (aluno e professor)
+│   ├── (publico)/        login e recuperação de senha (não há auto-cadastro)
 │   ├── (app)/            área autenticada (layout confirma a sessão)
 │   └── api/
 │       ├── bff/          login e logout — únicos a tocar no cookie
@@ -271,6 +271,8 @@ Testado contra o backend real (PostgreSQL + NestJS), com os usuários do seeder:
 |---|---|
 | **Dashboard** | Visões separadas para professor (indicadores de `/analytics/resumo`) e aluno (monitorias com papel, próximos atendimentos, avaliações pendentes, pontos). Quem acumula os dois perfis vê as duas seções |
 | **Disciplinas** | Listagem com busca e filtro, cadastro, edição, ativação/desativação. Restrito a PROFESSOR |
+| **Recuperação de senha** | Código de 6 dígitos por e-mail, depois código + nova senha. Pública e aberta também com sessão; link no login e em Minha conta. Nunca revela se o e-mail tem conta |
+| **Pessoas** | Alunos (com busca) e professores; cadastro de ambos com senha provisória e tela de dados de acesso. Restrito a PROFESSOR — é o único lugar onde contas são criadas |
 | **Monitorias** | Catálogo com busca, "minhas monitorias" com o papel em cada uma, criação, edição, transições de status (ativar/encerrar/cancelar) |
 | **Participantes** | Lista com filtro por papel e situação, busca de alunos, habilitar monitor (RN01), inscrever monitorado, auto-inscrição, encerrar vínculo, histórico de encerrados |
 | **Disponibilidade** | Grade semanal (lista no mobile), criar e desativar faixas. Só para quem é MONITOR ali |

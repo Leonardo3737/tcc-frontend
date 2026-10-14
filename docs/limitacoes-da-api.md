@@ -107,6 +107,53 @@ verdade que discordaria da primeira sob concorrência.
 
 ---
 
+## 8. Contas só nascem pelas mãos de um professor — e a troca de senha não é obrigatória
+
+**O que a API faz:** as rotas públicas `POST /auth/registro/aluno` e
+`/auth/registro/professor` foram removidas. Contas são criadas apenas por
+`POST /alunos` e `POST /professores`, ambos `@Perfis(PROFESSOR)`, com uma
+`senhaProvisoria` definida por quem cria. `criadoPorUsuarioId` registra a autoria.
+
+**O que o frontend faz:** a tela de login não oferece mais "criar conta" — diz que as
+contas são criadas por professores. O cadastro mora em **Pessoas** (menu de Gestão), com
+gerador de senha legível e uma tela final com os dados de acesso e o aviso "Oriente a
+pessoa a trocar a senha no primeiro acesso, em Minha conta".
+
+**Limitação residual:** o backend não tem `deveTrocarSenha`; nada obriga a troca. A tela
+**orienta**, e não finge que força.
+
+## 9. Lista de professores sem busca
+
+**O que a API oferece:** `GET /professores` aceita apenas paginação (`PaginacaoDto`), ao
+contrário de `GET /alunos`, que busca por nome, matrícula ou e-mail.
+
+**O que o frontend faz:** a aba Professores de Pessoas só pagina. Não há campo de busca,
+porque filtrar no cliente apenas a página atual esconderia resultados das outras.
+
+---
+
+## 10. Redefinir a senha não encerra sessões já abertas
+
+**O que a API faz:** `POST /auth/recuperacao/solicitar` e `/confirmar` trocam a senha a
+partir de um código de 6 dígitos (15 minutos, uso único, 5 tentativas). O JWT é stateless
+e não há revogação: um token emitido antes da troca continua válido até expirar (8 h).
+
+**O que o frontend faz:** a tela de conclusão diz apenas que a senha foi trocada e leva ao
+login. **Não** afirma que outros dispositivos foram desconectados, porque não foram.
+
+**Outras escolhas honestas da tela:**
+- fala sempre no condicional ("se houver uma conta com este e-mail..."), porque o backend
+  responde 202 para qualquer endereço e a tela não pode virar um enumerador de contas;
+- o e-mail fica em memória entre as etapas, nunca na URL; recarregar volta ao início;
+- não existe rota "só validar o código" (seria um oráculo), então código e nova senha são
+  pedidos juntos;
+- o limite de 3 pedidos por minuto aparece como mensagem de 429 traduzida.
+
+**Em desenvolvimento:** sem `BREVO_API_KEY`, o backend não envia e-mail e registra o código
+no próprio log (`[DESENVOLVIMENTO] Codigo de recuperacao de ...`).
+
+---
+
 ## Armadilha confirmada em teste: o fuso horário
 
 Não é limitação da API, mas o registro vale.

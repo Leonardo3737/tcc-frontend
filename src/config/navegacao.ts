@@ -4,6 +4,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   Trophy,
+  Users,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -73,6 +74,16 @@ export const ITENS_NAVEGACAO: ItemNavegacao[] = [
     icone: BookOpen,
     // Só PROFESSOR cria e edita o catálogo (backend: @Perfis(PROFESSOR)).
     perfis: [PerfilUsuario.PROFESSOR],
+    grupo: 'gestao',
+  },
+  {
+    rotulo: 'Pessoas',
+    href: rotas.pessoas,
+    icone: Users,
+    // Nao ha auto-cadastro: so PROFESSOR cria contas (POST /alunos e
+    // POST /professores) e lista alunos (GET /alunos).
+    perfis: [PerfilUsuario.PROFESSOR],
+    casaPrefixo: true,
     grupo: 'gestao',
   },
   {

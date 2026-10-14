@@ -25,8 +25,10 @@ import { Input } from '@/components/ui/campo';
  * consulta ambigua — alem de redundante no leitor de tela, ja que o botao esta
  * dentro do campo que o rotulo acabou de nomear.
  */
-export interface CampoSenhaProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'className' | 'type'> {
+export interface CampoSenhaProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'className' | 'type'
+> {
   label: string;
   erro?: string;
   ajuda?: string;

@@ -72,9 +72,7 @@ describe('papel e contextual, nao global', () => {
 
   it('o cartao mostra o papel DAQUELA monitoria', () => {
     renderizar(
-      <CartaoMonitoria
-        monitoria={monitoriaTeste({ meuPapel: PapelMonitoria.MONITOR })}
-      />,
+      <CartaoMonitoria monitoria={monitoriaTeste({ meuPapel: PapelMonitoria.MONITOR })} />,
       { usuario: usuarioTeste([PerfilUsuario.ALUNO]) },
     );
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { PREFIXOS_PUBLICOS, rotas } from '@/config/rotas';
+import { PREFIXOS_PUBLICOS, PREFIXOS_SO_SEM_SESSAO, rotas } from '@/config/rotas';
 
 /**
  * Guarda de borda: decide, olhando so a presenca do cookie, se a navegacao
@@ -26,14 +26,13 @@ export function middleware(requisicao: NextRequest): NextResponse {
   const { pathname, search } = requisicao.nextUrl;
 
   const temSessao = Boolean(requisicao.cookies.get(NOME_COOKIE)?.value);
-  const ehPublica = PREFIXOS_PUBLICOS.some(
-    (prefixo) => pathname === prefixo || pathname.startsWith(`${prefixo}/`),
-  );
+  const casa = (prefixo: string) => pathname === prefixo || pathname.startsWith(`${prefixo}/`);
+  const ehPublica = PREFIXOS_PUBLICOS.some(casa);
 
-  // Autenticado tentando ver login/cadastro: manda para o inicio.
+  // Autenticado tentando ver o login: manda para o inicio.
   // Sem isto, o usuario logado que clica em "voltar" cai numa tela de login
   // que nao faz mais sentido para ele.
-  if (temSessao && ehPublica) {
+  if (temSessao && PREFIXOS_SO_SEM_SESSAO.some(casa)) {
     return NextResponse.redirect(new URL(rotas.inicio, requisicao.url));
   }
 
@@ -64,5 +63,7 @@ export function middleware(requisicao: NextRequest): NextResponse {
  * "por que meu fetch retornou uma pagina inteira?".
  */
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 };

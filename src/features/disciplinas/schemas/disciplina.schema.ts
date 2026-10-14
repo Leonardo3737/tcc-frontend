@@ -2,12 +2,12 @@ import { z } from 'zod';
 
 /** Espelha criar-disciplina.dto.ts e atualizar-disciplina.dto.ts. */
 
+/**
+ * Criar pede SO o nome: o `codigo` e gerado pelo servidor a partir dele
+ * (ex.: "Calculo I" -> CAL001). Enviar `codigo` hoje devolveria 400 pelo
+ * `forbidNonWhitelisted`.
+ */
 export const esquemaCriarDisciplina = z.object({
-  codigo: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^[A-Za-z0-9.-]{2,20}$/, 'De 2 a 20 caracteres: letras, números, ponto ou hífen'),
   nome: z
     .string()
     .trim()
@@ -28,4 +28,4 @@ export const esquemaEditarDisciplina = z.object({
 
 export type DadosEditarDisciplina = z.infer<typeof esquemaEditarDisciplina>;
 
-export const CAMPOS_DISCIPLINA = ['codigo', 'nome', 'ativa'] as const;
+export const CAMPOS_DISCIPLINA = ['nome', 'ativa'] as const;

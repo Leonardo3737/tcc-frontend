@@ -1,12 +1,10 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { BookOpen, CalendarCheck, GraduationCap, Repeat2, Star } from 'lucide-react';
+import { BookOpen, CalendarCheck, Repeat2, Star, UserRoundPlus } from 'lucide-react';
 
 import { Card, CardConteudo } from '@/components/ui/card';
 import { SkeletonTexto } from '@/components/ui/skeleton';
 import { FormularioLogin } from '@/features/auth/components/formulario-login';
-import { rotas } from '@/config/rotas';
 
 export const metadata: Metadata = { title: 'Entrar' };
 
@@ -50,61 +48,24 @@ export default function PaginaLogin() {
             </Suspense>
           </CardConteudo>
 
-          <div className="space-y-2.5 border-t border-borda bg-fundo-suave/60 p-4 sm:px-6">
-            <p className="text-xs font-semibold uppercase tracking-wide text-texto-suave">
-              Ainda não tem conta?
+          {/*
+            Nao ha auto-cadastro: quem cria contas e um professor, dentro do
+            sistema. Dizer isso aqui evita a busca por um "criar conta" que nao
+            existe — e diz a quem recorrer.
+          */}
+          <div className="flex gap-3 border-t border-borda bg-fundo-suave/60 p-4 sm:px-6">
+            <UserRoundPlus className="mt-0.5 h-4 w-4 shrink-0 text-primaria" aria-hidden />
+            <p className="text-sm text-texto-suave">
+              <span className="font-semibold text-texto">Ainda não tem acesso?</span> As contas são
+              criadas pelos professores da instituição. Solicite o seu cadastro ao docente da sua
+              disciplina: você recebe uma senha provisória para trocar no primeiro acesso.
             </p>
-
-            {/*
-              Dois caminhos distintos, apresentados lado a lado. Antes eram duas
-              linhas de texto miudo, e o cadastro de docente — que exige codigo
-              da instituicao — ficava quase invisivel.
-            */}
-            <div className="grid gap-2 sm:grid-cols-2">
-              <LinkCadastro
-                href={rotas.cadastroAluno}
-                icone={<GraduationCap className="h-4 w-4" aria-hidden />}
-                titulo="Sou aluno"
-                descricao="Participe de monitorias"
-              />
-              <LinkCadastro
-                href={rotas.cadastroProfessor}
-                icone={<BookOpen className="h-4 w-4" aria-hidden />}
-                titulo="Sou professor"
-                descricao="Crie e acompanhe ofertas"
-              />
-            </div>
           </div>
         </Card>
       </div>
 
       <PainelApresentacao />
     </div>
-  );
-}
-
-function LinkCadastro({
-  href,
-  icone,
-  titulo,
-  descricao,
-}: {
-  href: string;
-  icone: React.ReactNode;
-  titulo: string;
-  descricao: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-3 rounded-md border border-borda bg-superficie px-3 py-2.5 transition-colors hover:border-primaria/40 hover:bg-primaria-suave/40"
-    >
-      <span className="text-primaria">{icone}</span>
-      <span className="min-w-0">
-        <span className="block text-sm font-semibold text-texto">{titulo}</span>
-        <span className="block text-xs text-texto-suave">{descricao}</span>
-      </span>
-    </Link>
   );
 }
 
@@ -121,7 +82,10 @@ function PainelApresentacao() {
         Monitoria no ensino superior
       </p>
 
-      <h2 id="titulo-apresentacao" className="mt-2.5 max-w-md font-titulo text-[1.75rem] font-semibold leading-[1.2] tracking-tight text-texto xl:text-[2.125rem] xl:leading-[1.15]">
+      <h2
+        id="titulo-apresentacao"
+        className="mt-2.5 max-w-md font-titulo text-[1.75rem] font-semibold leading-[1.2] tracking-tight text-texto xl:text-[2.125rem] xl:leading-[1.15]"
+      >
         O apoio acadêmico da sua disciplina, organizado em um só lugar.
       </h2>
 
@@ -137,14 +101,14 @@ function PainelApresentacao() {
       */}
       <div className="mt-6 rounded-card border border-primaria/20 bg-primaria-suave/50 p-4 xl:p-5">
         <p className="flex items-center gap-2 font-titulo text-titulo-cartao text-texto">
-          <Repeat2 className="h-4 w-4 text-primaria" aria-hidden />O papel é da monitoria, não
-          da conta
+          <Repeat2 className="h-4 w-4 text-primaria" aria-hidden />O papel é da monitoria, não da
+          conta
         </p>
 
         <p className="mt-2 text-sm text-texto-suave">
-          A mesma pessoa pode ser <strong className="font-semibold text-texto">monitora</strong>{' '}
-          em Cálculo I e <strong className="font-semibold text-texto">monitorada</strong> em Banco
-          de Dados. Cada monitoria tem o seu papel — e o que você pode fazer muda junto.
+          A mesma pessoa pode ser <strong className="font-semibold text-texto">monitora</strong> em
+          Cálculo I e <strong className="font-semibold text-texto">monitorada</strong> em Banco de
+          Dados. Cada monitoria tem o seu papel — e o que você pode fazer muda junto.
         </p>
       </div>
 

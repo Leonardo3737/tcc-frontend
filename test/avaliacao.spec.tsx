@@ -29,9 +29,7 @@ afterEach(() => vi.unstubAllGlobals());
  */
 describe('dialogo de avaliacao', () => {
   it('exige nota antes de habilitar o envio', () => {
-    renderizar(
-      <DialogoAvaliacao aberto aoFechar={vi.fn()} atendimentoId="a1" nomeMonitor="Ana" />,
-    );
+    renderizar(<DialogoAvaliacao aberto aoFechar={vi.fn()} atendimentoId="a1" nomeMonitor="Ana" />);
 
     expect(screen.getByRole('button', { name: /enviar avalia/i })).toBeDisabled();
   });

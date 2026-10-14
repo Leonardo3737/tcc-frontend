@@ -26,8 +26,12 @@ export function detalharDisciplina(id: string): Promise<Disciplina> {
   return apiCliente.get<Disciplina>(`/disciplinas/${id}`);
 }
 
-export function criarDisciplina(dados: { codigo: string; nome: string }): Promise<Disciplina> {
-  return apiCliente.post<Disciplina>('/disciplinas', dados);
+/**
+ * So o nome vai no corpo: o backend gera o `codigo` (prefixo do nome +
+ * sequencial, ex.: CAL001) e o devolve na resposta.
+ */
+export function criarDisciplina(dados: { nome: string }): Promise<Disciplina> {
+  return apiCliente.post<Disciplina>('/disciplinas', { nome: dados.nome });
 }
 
 /**

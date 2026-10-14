@@ -8,8 +8,7 @@
 export const rotas = {
   // Publicas
   login: '/login',
-  cadastroAluno: '/cadastro/aluno',
-  cadastroProfessor: '/cadastro/professor',
+  recuperarSenha: '/recuperar-senha',
 
   // Autenticadas
   inicio: '/inicio',
@@ -25,6 +24,7 @@ export const rotas = {
   atendimentos: '/atendimentos',
   atendimento: (id: string) => `/atendimentos/${id}`,
   disciplinas: '/disciplinas',
+  pessoas: '/pessoas',
   ranking: '/ranking',
   conta: '/conta',
 
@@ -33,5 +33,18 @@ export const rotas = {
   bffLogout: '/api/bff/logout',
 } as const;
 
-/** Prefixos que o middleware trata como area publica. */
-export const PREFIXOS_PUBLICOS = ['/login', '/cadastro'] as const;
+/**
+ * Prefixos que o middleware trata como area publica (nao exigem sessao).
+ *
+ * Nao existe auto-cadastro: contas sao criadas por um professor autenticado
+ * (POST /alunos e POST /professores), em Pessoas. A recuperacao de senha e
+ * publica porque quem esqueceu a senha, por definicao, nao consegue entrar.
+ */
+export const PREFIXOS_PUBLICOS = ['/login', '/recuperar-senha'] as const;
+
+/**
+ * Publicas que nao fazem sentido para quem ja esta autenticado — o middleware
+ * manda essa pessoa ao inicio. A recuperacao de senha fica de fora de proposito:
+ * Minha conta aponta para ela, para quem nao lembra a senha atual.
+ */
+export const PREFIXOS_SO_SEM_SESSAO = ['/login'] as const;
