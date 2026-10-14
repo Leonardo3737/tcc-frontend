@@ -129,6 +129,6 @@
 }
 
 /* Oculta o botão de exibir senha no Microsoft Edge */
-input[type="password"]::-ms-reveal {
+input[type='password']::-ms-reveal {
   display: none;
 }

@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { apiPublica } from '@/lib/api/servidor';
-import { ApiError, ErroDeRede } from '@/lib/api/erros';
+import {
+  ApiError,
+  CODIGO_SERVIDOR_INDISPONIVEL,
+  ErroDeRede,
+  MENSAGEM_SERVIDOR_INDISPONIVEL,
+  ehServidorIndisponivel,
+} from '@/lib/api/erros';
 import { gravarSessao } from '@/lib/auth/cookie';
 import type { RespostaLogin, Usuario } from '@/types/dominio';
 
@@ -45,6 +51,21 @@ export async function POST(requisicao: NextRequest): Promise<NextResponse> {
       { status: 200, headers: { 'cache-control': 'no-store' } },
     );
   } catch (erro) {
+    // API desligada ou acordando: resposta marcada, para o formulario de login
+    // explicar a espera em vez de mostrar um erro generico.
+    if (ehServidorIndisponivel(erro)) {
+      return NextResponse.json(
+        {
+          statusCode: 503,
+          erro: CODIGO_SERVIDOR_INDISPONIVEL,
+          mensagem: MENSAGEM_SERVIDOR_INDISPONIVEL,
+          caminho: '/api/bff/login',
+          timestamp: new Date().toISOString(),
+        },
+        { status: 503, headers: { 'cache-control': 'no-store' } },
+      );
+    }
+
     if (erro instanceof ApiError) {
       return NextResponse.json(
         {

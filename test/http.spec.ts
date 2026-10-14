@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { criarClienteHttp, montarQuery } from '@/lib/api/http';
 import type { Mock } from 'vitest';
-import { ApiError, ErroDeRede } from '@/lib/api/erros';
+import { ApiError, ErroDeRede, ErroServidorIndisponivel } from '@/lib/api/erros';
 
 /** Extrai os argumentos de uma chamada do mock com tipo — `calls[i]` é
  * `possibly undefined` sob `noUncheckedIndexedAccess`. */
@@ -95,16 +95,29 @@ describe('cliente HTTP', () => {
   });
 
   it('produz ApiError util mesmo quando a falha nao vem no formato do backend', async () => {
-    // Ex.: um gateway devolvendo HTML.
+    // Ex.: um erro interno devolvido como HTML por algo entre o cliente e a API.
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(new Response('<html>502</html>', { status: 502 })),
+      vi.fn().mockResolvedValue(new Response('<html>500</html>', { status: 500 })),
     );
 
     const falha = (await cliente.get('/x').catch((e: unknown) => e)) as ApiError;
 
     expect(falha).toBeInstanceOf(ApiError);
-    expect(falha.statusCode).toBe(502);
+    expect(falha.statusCode).toBe(500);
+  });
+
+  it('502/503/504 do gateway viram "servidor indisponivel" (API desligada, AD-F13)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('<html>502</html>', { status: 502 })),
+    );
+
+    const falha = await cliente.get('/x').catch((e: unknown) => e);
+
+    expect(falha).toBeInstanceOf(ErroServidorIndisponivel);
+    // Continua sendo um ErroDeRede: quem tratava falha de rede segue funcionando.
+    expect(falha).toBeInstanceOf(ErroDeRede);
   });
 
   it('transforma falha de rede em ErroDeRede, nao em excecao crua', async () => {
