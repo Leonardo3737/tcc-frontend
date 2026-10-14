@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { CODIGO_SERVIDOR_INDISPONIVEL, MENSAGEM_SERVIDOR_INDISPONIVEL } from '@/lib/api/erros';
+
 import { env } from '@/config/env';
 import { lerTokenDaSessao } from '@/lib/auth/cookie';
 
@@ -87,17 +89,21 @@ async function encaminhar(requisicao: NextRequest, caminho: string[]): Promise<N
     resultado.headers.set('cache-control', 'no-store');
     return resultado;
   } catch {
-    // O backend fora do ar nao pode virar uma excecao nao tratada no cliente:
-    // devolvemos o mesmo formato de erro que o resto da API usa.
+    /**
+     * O backend fora do ar nao pode virar uma excecao nao tratada no cliente:
+     * devolvemos o mesmo formato de erro que o resto da API usa, MARCADO como
+     * servidor indisponivel. Na hospedagem atual, "nao respondeu" quase sempre e
+     * a API desligada por inatividade, ainda acordando.
+     */
     return NextResponse.json(
       {
-        statusCode: 502,
-        erro: 'Bad Gateway',
-        mensagem: 'Não foi possível falar com o servidor da aplicação.',
+        statusCode: 503,
+        erro: CODIGO_SERVIDOR_INDISPONIVEL,
+        mensagem: MENSAGEM_SERVIDOR_INDISPONIVEL,
         caminho: requisicao.nextUrl.pathname,
         timestamp: new Date().toISOString(),
       },
-      { status: 502 },
+      { status: 503 },
     );
   }
 }

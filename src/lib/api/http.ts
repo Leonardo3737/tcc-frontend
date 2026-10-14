@@ -1,4 +1,4 @@
-import { ApiError, ErroDeRede } from './erros';
+import { ApiError, ErroDeRede, ErroServidorIndisponivel, STATUS_DE_GATEWAY } from './erros';
 import type { RespostaErro } from '@/types/api';
 
 /**
@@ -89,6 +89,20 @@ async function interpretarResposta<T>(resposta: Response, caminho: string): Prom
   // falha nasce fora dele (um proxy, um gateway) e o corpo nao e o esperado.
   const corpoErro = corpo as Partial<RespostaErro> | undefined;
 
+  /**
+   * 502/503/504 FORA do formato do backend: quem respondeu foi a hospedagem,
+   * porque o servidor da API esta desligado ou ainda acordando. Um 503 do
+   * proprio backend (com `statusCode` no corpo) segue como ApiError comum.
+   */
+  if (
+    corpoErro?.statusCode === undefined &&
+    (STATUS_DE_GATEWAY as readonly number[]).includes(resposta.status)
+  ) {
+    throw new ErroServidorIndisponivel(
+      `A hospedagem respondeu ${resposta.status} para ${caminho}: servidor da API indisponivel.`,
+    );
+  }
+
   throw new ApiError({
     statusCode: corpoErro?.statusCode ?? resposta.status,
     erro: corpoErro?.erro ?? resposta.statusText ?? 'Error',
@@ -148,15 +162,22 @@ export function criarClienteHttp(config: ConfiguracaoCliente) {
 
       return await interpretarResposta<T>(resposta, caminho);
     } catch (erro) {
-      if (erro instanceof ApiError) throw erro;
+      if (erro instanceof ApiError || erro instanceof ErroDeRede) throw erro;
+
+      /**
+       * No SERVIDOR do Next, falha de rede ou timeout ao chamar a API quer dizer
+       * uma coisa so: a API nao responde (desligada ou acordando). No navegador
+       * a causa pode ser a internet da propria pessoa, entao fica ErroDeRede.
+       */
+      const ErroFalha = typeof window === 'undefined' ? ErroServidorIndisponivel : ErroDeRede;
 
       if (erro instanceof DOMException && erro.name === 'AbortError') {
         // Cancelamento pedido pelo chamador nao e falha: deixa propagar como tal.
         if (sinal?.aborted) throw erro;
-        throw new ErroDeRede(`A requisicao para ${caminho} excedeu ${timeoutMs}ms.`, erro);
+        throw new ErroFalha(`A requisicao para ${caminho} excedeu ${timeoutMs}ms.`, erro);
       }
 
-      throw new ErroDeRede(`Falha de rede ao chamar ${caminho}.`, erro);
+      throw new ErroFalha(`Falha de rede ao chamar ${caminho}.`, erro);
     } finally {
       clearTimeout(temporizador);
     }

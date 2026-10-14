@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 
 import { EstadoErro } from '@/components/ui/estados';
+import { TelaServidorIndisponivel } from '@/components/comum/servidor-indisponivel';
+import { ehServidorIndisponivel } from '@/lib/api/erros';
 
 /**
  * Fronteira de erro da area autenticada.
@@ -24,6 +26,12 @@ export default function ErroDaArea({
     // correlaciona esta tela com a entrada correspondente no log do servidor.
     console.error('Erro na área autenticada:', error);
   }, [error]);
+
+  /**
+   * A API caiu no meio do uso (navegacao entre telas, com o shell ja montado).
+   * O `digest` marcado e o que chega ao navegador em producao — a mensagem nao.
+   */
+  if (ehServidorIndisponivel(error)) return <TelaServidorIndisponivel variante="embutida" />;
 
   return (
     <div className="py-6">

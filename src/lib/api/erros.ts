@@ -74,6 +74,57 @@ export class ErroDeRede extends Error {
 }
 
 /**
+ * Marca do caso "a API esta desligada/acordando".
+ *
+ * A API roda numa hospedagem que DESLIGA o servidor depois de um tempo sem uso;
+ * o primeiro acesso seguinte o religa, o que leva cerca de um minuto. Nesse
+ * intervalo as chamadas falham por conexao recusada, timeout ou um 502/503/504
+ * devolvido pela propria hospedagem (fora do formato de erro do backend).
+ *
+ * O valor vai como `digest` do erro, e isso nao e detalhe: em producao o Next
+ * APAGA a mensagem dos erros de servidor antes de manda-los ao navegador, mas
+ * preserva um `digest` ja definido. E a unica forma de a tela de erro saber
+ * que o motivo e este. Tambem e o `erro` que o BFF e o proxy devolvem.
+ */
+export const CODIGO_SERVIDOR_INDISPONIVEL = 'SERVIDOR_INDISPONIVEL';
+
+/** Status que a HOSPEDAGEM devolve enquanto o servidor da API nao responde. */
+export const STATUS_DE_GATEWAY = [502, 503, 504] as const;
+
+export class ErroServidorIndisponivel extends ErroDeRede {
+  readonly digest = CODIGO_SERVIDOR_INDISPONIVEL;
+
+  constructor(mensagem: string, causaOriginal?: unknown) {
+    super(mensagem, causaOriginal);
+    this.name = 'ErroServidorIndisponivel';
+  }
+}
+
+/**
+ * A falha e "API desligada ou acordando"?
+ *
+ * Aceita tanto o erro original (no servidor) quanto o que chega ao navegador:
+ * o `digest` de uma fronteira de erro do Next ou a resposta marcada do BFF e
+ * do proxy. Um 503 escrito PELO backend (ex.: e-mail nao enviado no cadastro)
+ * nao entra: ele tem mensagem de dominio propria.
+ */
+export function ehServidorIndisponivel(erro: unknown): boolean {
+  if (erro instanceof ErroServidorIndisponivel) return true;
+  if (erro instanceof ApiError) return erro.erro === CODIGO_SERVIDOR_INDISPONIVEL;
+
+  return (
+    typeof erro === 'object' &&
+    erro !== null &&
+    'digest' in erro &&
+    (erro as { digest?: unknown }).digest === CODIGO_SERVIDOR_INDISPONIVEL
+  );
+}
+
+/** Texto unico para o caso, escrito para quem nao e da area de tecnologia. */
+export const MENSAGEM_SERVIDOR_INDISPONIVEL =
+  'O servidor estava em pausa e está sendo ligado agora. Isso leva cerca de 1 minuto. Aguarde um pouco e tente de novo.';
+
+/**
  * Mensagem pronta para exibicao, qualquer que seja a falha.
  *
  * Para ApiError devolve a mensagem do backend, que ja e escrita para o usuario
@@ -82,6 +133,9 @@ export class ErroDeRede extends Error {
  * (detalhe interno nunca deve vazar).
  */
 export function mensagemDeErro(erro: unknown): string {
+  // Antes de qualquer outra regra: e um 5xx, e cairia no texto generico.
+  if (ehServidorIndisponivel(erro)) return MENSAGEM_SERVIDOR_INDISPONIVEL;
+
   if (erro instanceof ApiError) {
     if (erro.ehExcessoDeRequisicoes) {
       return 'Muitas tentativas em pouco tempo. Aguarde um minuto e tente novamente.';

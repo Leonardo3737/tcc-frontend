@@ -249,6 +249,40 @@ faixa única), texto de marketing.
 
 ---
 
+## AD-F13 — API desligada por inatividade: explicar e se recuperar sozinho
+
+**Contexto.** A API roda numa hospedagem que desliga o servidor quando ninguém usa o
+sistema por um tempo e o religa no acesso seguinte (cerca de 1 minuto). Nesse intervalo,
+o layout autenticado chamava `GET /usuarios/eu`, a chamada falhava e a exceção subia até
+a tela genérica do Next ("Application error: a server-side exception has occurred").
+
+**Decisão.** A indisponibilidade é reconhecida **no servidor** e marcada:
+`ErroServidorIndisponivel` (conexão recusada, timeout, ou 502/503/504 **fora** do formato
+de erro do backend, ou seja, vindo da hospedagem) carrega `digest = SERVIDOR_INDISPONIVEL`.
+O layout `(app)` captura o caso e renderiza `TelaServidorIndisponivel`; o BFF de login e o
+proxy devolvem `erro: SERVIDOR_INDISPONIVEL` com mensagem em linguagem simples.
+
+**Por que o `digest`.** Em produção o Next apaga a mensagem dos erros de servidor antes de
+enviá-los ao navegador, mas preserva um `digest` já definido. É o único dado que permite a
+`(app)/error.tsx` e a `global-error.tsx` reconhecerem o caso quando ele acontece no meio
+do uso (navegação entre telas).
+
+**A tela.** Explica o que acontece sem jargão, garante que nada foi perdido e recarrega
+sozinha: verifica `GET /configuracao` a cada 10 s e recarrega assim que a API responde,
+ou ao fim de 1 minuto. A contagem é calculada a partir do instante de início (abas em
+segundo plano espaçam os timers). Após 3 recargas seguidas em 5 minutos, o texto admite
+que o problema pode ser outro.
+
+**O que não entra no caso.** Um 503 escrito pelo próprio backend (ex.: e-mail de senha
+não enviado no cadastro) continua erro de domínio, com a mensagem dele. No navegador,
+falha de rede sem resposta continua `ErroDeRede`: ali a causa pode ser a internet da
+própria pessoa.
+
+**Verificado** em build de produção com a API inacessível: `/inicio` e `/monitorias`
+passaram de 500 para a tela de espera; login e proxy devolvem a resposta marcada.
+
+---
+
 ## O que foi deliberadamente NÃO feito
 
 | Item | Motivo |
