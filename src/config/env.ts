@@ -61,6 +61,8 @@ export const ehProducao = env.NODE_ENV === 'production';
  * instrumentation lança; os testes apenas inspecionam).
  */
 export function problemasDePoliticaDeProducao(valores = env): string[] {
+  console.log({env});
+  
   if (valores.NODE_ENV !== 'production') return [];
 
   const problemas: string[] = [];
