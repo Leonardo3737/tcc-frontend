@@ -81,10 +81,7 @@ export function FormularioNovaMonitoria() {
     mutationFn: criarMonitoria,
     onSuccess: (monitoria) => {
       void queryClient.invalidateQueries({ queryKey: chaves.monitorias.raiz });
-      toast.sucesso(
-        'Monitoria criada',
-        'Ela nasce PLANEJADA. Ative-a para aceitar atendimentos.',
-      );
+      toast.sucesso('Monitoria criada', 'Ela nasce PLANEJADA. Ative-a para aceitar atendimentos.');
       router.replace(rotas.monitoria(monitoria.id));
     },
     // 409 = já existe monitoria desta disciplina para você neste período
@@ -188,8 +185,8 @@ export function FormularioNovaMonitoria() {
       />
 
       <Alert tom="info">
-        A monitoria é criada como <strong>PLANEJADA</strong>. Alunos já podem se inscrever,
-        mas o agendamento de atendimentos só é liberado depois de você ativá-la.
+        A monitoria é criada como <strong>PLANEJADA</strong>. Alunos já podem se inscrever, mas o
+        agendamento de atendimentos só é liberado depois de você ativá-la.
       </Alert>
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

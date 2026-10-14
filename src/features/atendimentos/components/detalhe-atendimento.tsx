@@ -1,8 +1,6 @@
 'use client';
 
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import Link from 'next/link';
 import {
   Ban,
   CalendarClock,
@@ -13,34 +11,44 @@ import {
   UserPlus,
   Video,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useState } from 'react';
 
+import { DialogoConfirmacao } from '@/components/comum/confirmacao';
+import { Alert } from '@/components/ui/alert';
+import { Badge, BadgeStatusAtendimento } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardCabecalho, CardConteudo } from '@/components/ui/card';
-import { Badge, BadgeStatusAtendimento } from '@/components/ui/badge';
-import { Alert } from '@/components/ui/alert';
 import { EstadoErro } from '@/components/ui/estados';
 import { SkeletonCard } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
-import { DialogoConfirmacao } from '@/components/comum/confirmacao';
+import { rotas } from '@/config/rotas';
 import { DialogoAvaliacao } from '@/features/avaliacoes/components/dialogo-avaliacao';
-import { DialogoCancelar, DialogoReagendar, DialogoRealizar } from './dialogos-atendimento';
-import { Avaliacoes, HistoricoAtendimento, ListaInscricoes } from './secoes-atendimento';
+import { detalharMonitoria } from '@/features/monitorias/api/monitorias.service';
+import { mensagemDeErro } from '@/lib/api/erros';
+import {
+  contextoDaMonitoria,
+  podeDesistirDaInscricao,
+  podeGerirAtendimento,
+  podeRegistrarRealizacao,
+  podeSeInscreverEmAtendimento,
+} from '@/lib/autorizacao/capacidades';
+import { formatarDataHoraExtensa, formatarIntervalo } from '@/lib/datas/fuso';
+import { chaves } from '@/lib/query/chaves';
+import { useSessao } from '@/providers/sessao-provider';
+import {
+  ModalidadeAtendimento,
+  OrigemAtendimento,
+  PapelMonitoria,
+  StatusAtendimento,
+} from '@/types/dominio';
 import {
   cancelarInscricao,
   detalharAtendimento,
   inscreverEmAtendimento,
 } from '../api/atendimentos.service';
-import { useSessao } from '@/providers/sessao-provider';
-import { mensagemDeErro } from '@/lib/api/erros';
-import { chaves } from '@/lib/query/chaves';
-import { rotas } from '@/config/rotas';
-import { formatarDataHoraExtensa, formatarIntervalo } from '@/lib/datas/fuso';
-import {
-  ModalidadeAtendimento,
-  OrigemAtendimento,
-  StatusAtendimento,
-  StatusInscricao,
-} from '@/types/dominio';
+import { DialogoCancelar, DialogoReagendar, DialogoRealizar } from './dialogos-atendimento';
+import { Avaliacoes, HistoricoAtendimento, ListaInscricoes } from './secoes-atendimento';
 
 /**
  * Detalhe do atendimento e as acoes possiveis sobre ele.
@@ -50,9 +58,12 @@ import {
  *  - `inscricoes[].souEu` identifica a minha inscricao;
  *  - `inscricoes[].podeAvaliar` decide o botao de avaliar (RN05/RN06).
  *
- * Realizar, cancelar e reagendar pertencem ao monitor da sessao ou ao professor
- * responsavel. Como a monitoria nao esta na URL, essa checagem acontece no
- * backend — aqui um 403 seria sintoma de divergencia, nao fluxo esperado.
+ * Realizar, cancelar e reagendar pertencem ao monitor DAQUELA sessao ou ao
+ * professor responsavel; inscrever-se e desistir, ao monitorado. Esta tela fica
+ * fora do layout da monitoria, entao o papel vem de `GET /monitorias/:id`
+ * (`meuPapel`, `souResponsavel`, `meuParticipanteId`), e cada botao consulta a
+ * regra em `capacidades.ts`. Enquanto o contexto nao chega, as acoes que
+ * dependem dele ficam ocultas: mostrar e depois esconder seria pior.
  */
 export function DetalheAtendimento({ atendimentoId }: { atendimentoId: string }) {
   const { fuso } = useSessao();
@@ -67,6 +78,14 @@ export function DetalheAtendimento({ atendimentoId }: { atendimentoId: string })
   const consulta = useQuery({
     queryKey: chaves.atendimentos.detalhe(atendimentoId),
     queryFn: () => detalharAtendimento(atendimentoId),
+  });
+
+  const monitoriaId = consulta.data?.monitoriaId;
+
+  const contextoMonitoria = useQuery({
+    queryKey: chaves.monitorias.detalhe(monitoriaId ?? ''),
+    queryFn: () => detalharMonitoria(monitoriaId!),
+    enabled: Boolean(monitoriaId),
   });
 
   const invalidar = () => {
@@ -110,6 +129,16 @@ export function DetalheAtendimento({ atendimentoId }: { atendimentoId: string })
   const remoto = atendimento.modalidade === ModalidadeAtendimento.REMOTO;
   const agendado = atendimento.status === StatusAtendimento.AGENDADO;
   const jaComecou = new Date(atendimento.inicio).getTime() <= Date.now();
+
+  const contexto = contextoMonitoria.data ? contextoDaMonitoria(contextoMonitoria.data) : null;
+  const podeInscrever = contexto ? podeSeInscreverEmAtendimento(atendimento, contexto) : false;
+  const podeDesistir = podeDesistirDaInscricao(atendimento);
+  const podeGerir = contexto ? podeGerirAtendimento(atendimento, contexto) : false;
+  const podeRealizar = contexto ? podeRegistrarRealizacao(atendimento, contexto) : false;
+  const souSolicitante =
+    atendimento.origem === OrigemAtendimento.SOLICITACAO_ALUNO && Boolean(minhaInscricao);
+  const algumaAcao =
+    podeInscrever || podeDesistir || podeGerir || Boolean(minhaInscricao?.podeAvaliar);
 
   /**
    * Se ele é o único inscrito de uma sessão que ele mesmo solicitou, desistir
@@ -210,27 +239,49 @@ export function DetalheAtendimento({ atendimentoId }: { atendimentoId: string })
           <Card>
             <CardCabecalho titulo="Ações" />
             <CardConteudo className="space-y-2">
+              {contextoMonitoria.isPending && agendado && (
+                <p className="text-sm text-texto-suave" role="status">
+                  Verificando o que você pode fazer aqui…
+                </p>
+              )}
+
               {/* --- Monitorado --- */}
-              {atendimento.aceitaInscricao && !minhaInscricao && (
+              {podeInscrever && (
                 <Button
                   className="w-full"
                   carregando={inscrever.isPending}
                   onClick={() => inscrever.mutate()}
                   iconeEsquerda={<UserPlus className="h-4 w-4" aria-hidden />}
                 >
-                  Inscrever-se
+                  {minhaInscricao ? 'Inscrever-se de novo' : 'Inscrever-se'}
                 </Button>
               )}
 
-              {minhaInscricao?.status === StatusInscricao.INSCRITO && agendado && (
-                <Button
-                  variante="secundaria"
-                  className="w-full"
-                  onClick={() => setConfirmandoDesistencia(true)}
-                  iconeEsquerda={<UserMinus className="h-4 w-4" aria-hidden />}
-                >
-                  Desistir da inscrição
-                </Button>
+              {podeDesistir && (
+                <>
+                  <Button
+                    variante="secundaria"
+                    className="w-full"
+                    onClick={() => setConfirmandoDesistencia(true)}
+                    iconeEsquerda={<UserMinus className="h-4 w-4" aria-hidden />}
+                  >
+                    {souSolicitante && desistirCancelaSessao
+                      ? 'Desistir e cancelar o pedido'
+                      : 'Desistir da inscrição'}
+                  </Button>
+
+                  {/*
+                    O solicitante nao cancela nem reagenda (so o monitor ou o
+                    professor). Dizer isso evita a busca por um botao que nao
+                    existe para ele.
+                  */}
+                  {souSolicitante && (
+                    <p className="text-xs text-texto-suave">
+                      Precisa de outro horário? Cancele e faça um novo pedido, ou combine com o
+                      monitor: só ele ou o professor responsável podem reagendar.
+                    </p>
+                  )}
+                </>
               )}
 
               {minhaInscricao?.podeAvaliar && (
@@ -249,23 +300,24 @@ export function DetalheAtendimento({ atendimentoId }: { atendimentoId: string })
                 </p>
               )}
 
-              {/* --- Monitor da sessão / professor responsável --- */}
-              {agendado && (
+              {/* --- Monitor DESTA sessão ou professor responsável --- */}
+              {podeGerir && (
                 <>
-                  <Button
-                    variante="secundaria"
-                    className="w-full"
-                    disabled={!jaComecou}
-                    onClick={() => setDialogoRealizar(true)}
-                    iconeEsquerda={<CheckCircle2 className="h-4 w-4" aria-hidden />}
-                  >
-                    Registrar realização
-                  </Button>
-
-                  {!jaComecou && (
-                    <p className="text-xs text-texto-suave">
-                      A realização só pode ser registrada depois do horário de início.
-                    </p>
+                  {podeRealizar ? (
+                    <Button
+                      variante="secundaria"
+                      className="w-full"
+                      onClick={() => setDialogoRealizar(true)}
+                      iconeEsquerda={<CheckCircle2 className="h-4 w-4" aria-hidden />}
+                    >
+                      Registrar realização
+                    </Button>
+                  ) : (
+                    !jaComecou && (
+                      <p className="text-xs text-texto-suave">
+                        A presença pode ser registrada a partir do horário de início.
+                      </p>
+                    )
                   )}
 
                   <Button
@@ -285,11 +337,6 @@ export function DetalheAtendimento({ atendimentoId }: { atendimentoId: string })
                   >
                     Cancelar atendimento
                   </Button>
-
-                  <p className="pt-1 text-xs text-texto-suave">
-                    Realizar, reagendar e cancelar são ações do monitor desta sessão ou do
-                    professor responsável.
-                  </p>
                 </>
               )}
 
@@ -297,6 +344,16 @@ export function DetalheAtendimento({ atendimentoId }: { atendimentoId: string })
                 <p className="text-sm text-texto-suave">
                   Este atendimento está {atendimento.status.toLowerCase()} e não aceita mais
                   alterações.
+                </p>
+              )}
+
+              {agendado && contexto && !algumaAcao && (
+                <p className="text-sm text-texto-suave">
+                  {contexto.meuPapel === PapelMonitoria.MONITORADO
+                    ? 'As inscrições desta sessão estão fechadas: ela está lotada ou já começou.'
+                    : `Não há ações para você neste atendimento. Ele é conduzido por ${
+                        atendimento.nomeMonitor ?? 'outro monitor'
+                      }.`}
                 </p>
               )}
             </CardConteudo>

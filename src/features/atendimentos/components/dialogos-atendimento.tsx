@@ -100,7 +100,9 @@ export function DialogoCancelar({
               ajuda="Entre 5 e 500 caracteres."
               placeholder="Ex.: monitor ficou doente."
               erro={
-                motivo.length > 0 && !valido ? 'O motivo deve ter entre 5 e 500 caracteres' : undefined
+                motivo.length > 0 && !valido
+                  ? 'O motivo deve ter entre 5 e 500 caracteres'
+                  : undefined
               }
             />
 

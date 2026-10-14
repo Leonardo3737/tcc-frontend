@@ -14,6 +14,7 @@ import { Paginacao } from '@/components/comum/paginacao';
 import { CartaoMonitoria, SkeletonCartaoMonitoria } from './cartao-monitoria';
 import { listarMinhasMonitorias, listarMonitorias } from '../api/monitorias.service';
 import { useFiltrosUrl } from '@/hooks/use-filtros-url';
+import { podeCriarMonitoria } from '@/lib/autorizacao/capacidades';
 import { useSessao } from '@/providers/sessao-provider';
 import { chaves } from '@/lib/query/chaves';
 import { rotas } from '@/config/rotas';
@@ -33,7 +34,7 @@ import { StatusMonitoria } from '@/types/dominio';
  */
 export function PainelMonitorias() {
   const { obter, obterNumero, definir, pendente } = useFiltrosUrl();
-  const { ehProfessor } = useSessao();
+  const { usuario } = useSessao();
 
   const aba = obter('aba', 'minhas');
   const busca = obter('busca');
@@ -49,7 +50,7 @@ export function PainelMonitorias() {
             <TabsGatilho value="explorar">Explorar</TabsGatilho>
           </TabsLista>
 
-          {ehProfessor && (
+          {podeCriarMonitoria(usuario) && (
             <Link href={rotas.novaMonitoria} className={classesBotao('primaria', 'sm', 'shrink-0')}>
               <Plus className="mr-2 h-4 w-4" aria-hidden />
               Nova monitoria
@@ -189,7 +190,8 @@ function VisaoExplorar({
     busca: busca || undefined,
     // Padrão ATIVA: são as monitorias em que o aluno consegue efetivamente
     // agendar atendimento. As PLANEJADAS aceitam inscrição, mas não agendamento.
-    status: situacao === 'todas' ? undefined : (situacao as StatusMonitoria) || StatusMonitoria.ATIVA,
+    status:
+      situacao === 'todas' ? undefined : (situacao as StatusMonitoria) || StatusMonitoria.ATIVA,
     pagina,
     limite: 12,
   };

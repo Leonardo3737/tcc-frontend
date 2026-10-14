@@ -14,7 +14,9 @@ import type { Monitoria } from '@/types/dominio';
  */
 export async function obterMonitoriaOuFalhar(
   monitoriaId: string,
-): Promise<{ monitoria: Monitoria; erroDeAcesso: false } | { monitoria: null; erroDeAcesso: true }> {
+): Promise<
+  { monitoria: Monitoria; erroDeAcesso: false } | { monitoria: null; erroDeAcesso: true }
+> {
   try {
     const monitoria = await apiServidor.get<Monitoria>(`/monitorias/${monitoriaId}`, {
       cache: 'no-store',

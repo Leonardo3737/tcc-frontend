@@ -54,8 +54,8 @@ export function PainelMeusAtendimentos() {
   if (!ehAluno) {
     return (
       <Alert tom="info" titulo="Você não tem agenda pessoal">
-        A agenda pessoal reúne os atendimentos em que você atende ou é atendido — o que
-        depende de um vínculo de monitor ou monitorado.
+        A agenda pessoal reúne os atendimentos em que você atende ou é atendido — o que depende de
+        um vínculo de monitor ou monitorado.
         {ehProfessor && ' Como professor, acompanhe os atendimentos dentro de cada monitoria.'}
       </Alert>
     );

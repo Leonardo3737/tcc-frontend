@@ -91,8 +91,8 @@ export function PainelAtendimentosMonitoria() {
 
       {!monitoriaAtiva && (
         <Alert tom="alerta">
-          A monitoria está <strong>{monitoria.status}</strong>. O agendamento de novos
-          atendimentos exige monitoria ATIVA.
+          A monitoria está <strong>{monitoria.status}</strong>. O agendamento de novos atendimentos
+          exige monitoria ATIVA.
         </Alert>
       )}
 
@@ -148,4 +148,3 @@ export function PainelAtendimentosMonitoria() {
     </div>
   );
 }
-

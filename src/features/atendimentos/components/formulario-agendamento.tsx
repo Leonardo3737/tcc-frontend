@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { CalendarPlus, Clock, Info } from 'lucide-react';
 
+import { SemAcesso } from '@/components/autorizacao/sem-acesso';
 import { Button } from '@/components/ui/button';
 import { Card, CardCabecalho, CardConteudo } from '@/components/ui/card';
 import { Input, Select, Textarea } from '@/components/ui/campo';
@@ -28,7 +29,12 @@ import {
   instanteDeDataHoraLocal,
   nomeDoDiaSemana,
 } from '@/lib/datas/fuso';
-import { ModalidadeAtendimento, PapelMonitoria, StatusParticipacao } from '@/types/dominio';
+import {
+  ModalidadeAtendimento,
+  PapelMonitoria,
+  StatusMonitoria,
+  StatusParticipacao,
+} from '@/types/dominio';
 
 const CAMPOS = [
   'monitorParticipanteId',
@@ -54,6 +60,33 @@ const CAMPOS = [
  * tem vinculo que ocupe agenda (professorResponsavel: 'NEGADO' no backend).
  */
 export function FormularioAgendamento() {
+  const { monitoria, contexto, capacidades } = useContextoMonitoria();
+
+  /**
+   * A rota pode ser aberta pela URL; sem esta guarda, o professor (NEGADO no
+   * backend) ou alguem numa monitoria nao ATIVA preencheria o formulario
+   * inteiro para receber 403/409 no envio. A regra e a mesma do botao
+   * "Agendar" (`capacidades.agendarAtendimento`).
+   */
+  if (!capacidades.agendarAtendimento) {
+    return (
+      <SemAcesso
+        titulo="Você não pode agendar nesta monitoria"
+        descricao={
+          contexto.souResponsavel && !contexto.meuPapel
+            ? 'O professor responsável administra a monitoria, mas não tem agenda: atendimentos são abertos por monitores e solicitados por monitorados.'
+            : monitoria.status === StatusMonitoria.ATIVA
+              ? 'Só monitores e monitorados desta monitoria agendam atendimentos.'
+              : 'Atendimentos só podem ser agendados enquanto a monitoria está ativa.'
+        }
+      />
+    );
+  }
+
+  return <ConteudoFormularioAgendamento />;
+}
+
+function ConteudoFormularioAgendamento() {
   const { monitoria, contexto } = useContextoMonitoria();
   const { fuso, configuracao } = useSessao();
   const router = useRouter();
@@ -103,7 +136,8 @@ export function FormularioAgendamento() {
           },
         )
         .refine(
-          (dados) => diferencaEmMinutos(dados.horaInicio, dados.horaFim) <= limites.duracaoMaximaMinutos,
+          (dados) =>
+            diferencaEmMinutos(dados.horaInicio, dados.horaFim) <= limites.duracaoMaximaMinutos,
           {
             path: ['horaFim'],
             message: `A duração máxima é de ${limites.duracaoMaximaMinutos} minutos`,
@@ -243,8 +277,8 @@ export function FormularioAgendamento() {
   if (!souMonitor && monitores.isSuccess && monitores.data.dados.length === 0) {
     return (
       <Alert tom="alerta" titulo="Nenhum monitor habilitado">
-        Esta monitoria ainda não tem monitores ativos, então não há a quem solicitar
-        atendimento. O professor responsável é quem habilita monitores.
+        Esta monitoria ainda não tem monitores ativos, então não há a quem solicitar atendimento. O
+        professor responsável é quem habilita monitores.
       </Alert>
     );
   }
@@ -319,8 +353,8 @@ export function FormularioAgendamento() {
             </div>
 
             <p className="text-xs text-texto-suave">
-              Horários no fuso da instituição ({fuso}). Duração entre{' '}
-              {limites.duracaoMinimaMinutos} e {limites.duracaoMaximaMinutos} minutos.
+              Horários no fuso da instituição ({fuso}). Duração entre {limites.duracaoMinimaMinutos}{' '}
+              e {limites.duracaoMaximaMinutos} minutos.
             </p>
 
             <Textarea
@@ -452,7 +486,9 @@ export function FormularioAgendamento() {
                     className="flex items-center gap-2 rounded-lg border border-borda px-3 py-2 text-sm"
                   >
                     <Clock className="h-3.5 w-3.5 shrink-0 text-texto-suave" aria-hidden />
-                    <span className="capitalize text-texto">{nomeDoDiaSemana(faixa.diaSemana)}</span>
+                    <span className="capitalize text-texto">
+                      {nomeDoDiaSemana(faixa.diaSemana)}
+                    </span>
                     <span className="ml-auto font-mono text-xs text-texto-suave">
                       {formatarHoraSimples(faixa.horaInicio)}–{formatarHoraSimples(faixa.horaFim)}
                     </span>
@@ -461,8 +497,8 @@ export function FormularioAgendamento() {
               </ul>
 
               <p className="mt-3 flex gap-2 text-xs text-texto-suave">
-                <Info className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                O atendimento precisa caber inteiro dentro de uma dessas faixas, no mesmo dia.
+                <Info className="h-3.5 w-3.5 shrink-0" aria-hidden />O atendimento precisa caber
+                inteiro dentro de uma dessas faixas, no mesmo dia.
               </p>
             </>
           )}

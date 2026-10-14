@@ -23,6 +23,7 @@ import {
 import { useContextoMonitoria } from '@/providers/monitoria-provider';
 import { useSessao } from '@/providers/sessao-provider';
 import { aplicarErroDeFormulario } from '@/lib/api/formulario';
+import { podeParticiparDaMonitoria } from '@/lib/autorizacao/capacidades';
 import { mensagemDeErro } from '@/lib/api/erros';
 import { chaves } from '@/lib/query/chaves';
 import { rotas } from '@/config/rotas';
@@ -143,7 +144,7 @@ function Atalho({
  */
 function CartaoParticipacao() {
   const { monitoria, contexto, capacidades } = useContextoMonitoria();
-  const { ehAluno } = useSessao();
+  const { usuario } = useSessao();
   const queryClient = useQueryClient();
   const router = useRouter();
   const [confirmandoSaida, setConfirmandoSaida] = useState(false);
@@ -187,8 +188,8 @@ function CartaoParticipacao() {
         <CardCabecalho titulo="Sua participação" />
         <CardConteudo>
           <p className="text-sm text-texto">
-            Você é o <strong>professor responsável</strong> por esta monitoria: administra a
-            oferta, habilita monitores e acompanha os indicadores.
+            Você é o <strong>professor responsável</strong> por esta monitoria: administra a oferta,
+            habilita monitores e acompanha os indicadores.
           </p>
           <p className="mt-2 text-sm text-texto-suave">
             Professores não declaram disponibilidade nem agendam atendimentos — essas ações
@@ -214,8 +215,8 @@ function CartaoParticipacao() {
           </p>
 
           <p className="text-xs text-texto-suave">
-            Este papel vale <strong>apenas aqui</strong>. Em outra monitoria você pode ter um
-            papel diferente.
+            Este papel vale <strong>apenas aqui</strong>. Em outra monitoria você pode ter um papel
+            diferente.
           </p>
 
           {capacidades.sairDaMonitoria && !encerrada && (
@@ -252,7 +253,7 @@ function CartaoParticipacao() {
       <CardConteudo className="space-y-3">
         <p className="text-sm text-texto-suave">Você ainda não participa desta monitoria.</p>
 
-        {ehAluno && !encerrada ? (
+        {podeParticiparDaMonitoria(usuario, contexto) ? (
           <>
             <Button
               carregando={participar.isPending}
@@ -263,8 +264,8 @@ function CartaoParticipacao() {
             </Button>
 
             <p className="text-xs text-texto-suave">
-              Um aluno não acumula os dois papéis na mesma monitoria: para ser monitor aqui, é
-              o professor responsável quem habilita.
+              Um aluno não acumula os dois papéis na mesma monitoria: para ser monitor aqui, é o
+              professor responsável quem habilita.
             </p>
           </>
         ) : (
@@ -333,7 +334,11 @@ function FormularioEdicao({ aoConcluir }: { aoConcluir: () => void }) {
   const enviando = isSubmitting || mutacao.isPending;
 
   return (
-    <form onSubmit={handleSubmit((dados) => mutacao.mutate(dados))} className="space-y-4" noValidate>
+    <form
+      onSubmit={handleSubmit((dados) => mutacao.mutate(dados))}
+      className="space-y-4"
+      noValidate
+    >
       {errors.root && <Alert tom="erro">{errors.root.message}</Alert>}
 
       <Textarea
@@ -359,8 +364,8 @@ function FormularioEdicao({ aoConcluir }: { aoConcluir: () => void }) {
       </div>
 
       <p className="text-xs text-texto-suave">
-        Disciplina e período não são editáveis: eles são a identidade da oferta. Para ofertar
-        outra disciplina, crie outra monitoria.
+        Disciplina e período não são editáveis: eles são a identidade da oferta. Para ofertar outra
+        disciplina, crie outra monitoria.
       </p>
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

@@ -11,11 +11,7 @@ import { Textarea } from '@/components/ui/campo';
 import { Alert } from '@/components/ui/alert';
 import { toast } from '@/components/ui/toast';
 import { DialogoConfirmacao } from '@/components/comum/confirmacao';
-import {
-  ativarMonitoria,
-  cancelarMonitoria,
-  encerrarMonitoria,
-} from '../api/monitorias.service';
+import { ativarMonitoria, cancelarMonitoria, encerrarMonitoria } from '../api/monitorias.service';
 import { useContextoMonitoria } from '@/providers/monitoria-provider';
 import { ApiError, mensagemDeErro } from '@/lib/api/erros';
 import { chaves } from '@/lib/query/chaves';
@@ -55,7 +51,10 @@ export function AcoesStatusMonitoria() {
   const encerrar = useMutation({
     mutationFn: () => encerrarMonitoria(monitoria.id),
     onSuccess: () => {
-      toast.sucesso('Monitoria encerrada', 'Os vínculos ativos foram encerrados. Nada foi apagado.');
+      toast.sucesso(
+        'Monitoria encerrada',
+        'Os vínculos ativos foram encerrados. Nada foi apagado.',
+      );
       setDialogoEncerrar(false);
       atualizar();
     },
@@ -161,7 +160,10 @@ export function AcoesStatusMonitoria() {
         aviso="Nada é apagado (RN10) — participantes, atendimentos e materiais continuam consultáveis. Se houver atendimentos AGENDADOS, o backend recusará: cancele cada um antes, para que fiquem no histórico com motivo próprio."
       />
 
-      <Dialog open={dialogoCancelar} onOpenChange={(aberto) => !aberto && setDialogoCancelar(false)}>
+      <Dialog
+        open={dialogoCancelar}
+        onOpenChange={(aberto) => !aberto && setDialogoCancelar(false)}
+      >
         {dialogoCancelar && (
           <DialogConteudo
             titulo="Cancelar monitoria"

@@ -191,9 +191,8 @@ export function DialogoAdicionarParticipante({
             )}
 
             <Alert tom="info">
-              <strong>Habilitar como monitor</strong> é o ato previsto na RN01 — fica
-              registrado que foi você quem autorizou. Um aluno não pode acumular os dois
-              papéis na mesma monitoria.
+              <strong>Habilitar como monitor</strong> é o ato previsto na RN01 — fica registrado que
+              foi você quem autorizou. Um aluno não pode acumular os dois papéis na mesma monitoria.
             </Alert>
           </div>
         </DialogConteudo>

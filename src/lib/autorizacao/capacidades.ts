@@ -56,6 +56,9 @@ export const podeCadastrarUsuarios = (usuario: Usuario | null) => ehProfessor(us
  */
 export const podeListarAlunos = (usuario: Usuario | null) => ehProfessor(usuario);
 
+/** Criar monitoria — `@Perfis(PROFESSOR)` em POST /monitorias. */
+export const podeCriarMonitoria = (usuario: Usuario | null) => ehProfessor(usuario);
+
 // ---------------------------------------------------------------------------
 // Contexto de monitoria (espelha o ParticipacaoGuard)
 // ---------------------------------------------------------------------------
@@ -155,7 +158,30 @@ export function podeEditarMaterial(
   return Boolean(usuario && material.autorUsuarioId === usuario.id);
 }
 
-/** Realizar, cancelar e reagendar: monitor DAQUELA sessao ou o responsavel. */
+/**
+ * Participar como monitorado (POST /monitorias/:id/inscricao).
+ *
+ * Espelha `@Perfis(ALUNO)` + o service: monitoria nao encerrada nem cancelada e
+ * nenhum vinculo ativo ali (RN09 — o aluno nao acumula papeis). Depende do
+ * perfil global E do contexto, por isso fica fora de `capacidades()`.
+ */
+export function podeParticiparDaMonitoria(
+  usuario: Usuario | null,
+  contexto: ContextoMonitoria,
+): boolean {
+  const aberta =
+    contexto.status !== StatusMonitoria.ENCERRADA && contexto.status !== StatusMonitoria.CANCELADA;
+  return ehAluno(usuario) && aberta && contexto.meuPapel === null;
+}
+
+/**
+ * Realizar, cancelar e reagendar: monitor DAQUELA sessao ou o responsavel
+ * (`exigirMonitorOuProfessor` no service de atendimentos).
+ *
+ * O monitorado NAO entra aqui — nem quando foi ele quem solicitou a sessao.
+ * O caminho dele e desistir da inscricao (`podeDesistirDaInscricao`); se ele era
+ * o ultimo inscrito de uma solicitacao, o backend cancela o atendimento sozinho.
+ */
 export function podeGerirAtendimento(
   atendimento: Atendimento,
   contexto: ContextoMonitoria,
@@ -184,6 +210,46 @@ export function podeAvaliar(atendimento: Atendimento, inscricao: Inscricao | und
     atendimento.status === StatusAtendimento.REALIZADO &&
     inscricao.status === StatusInscricao.PRESENTE &&
     !inscricao.jaAvaliei
+  );
+}
+
+/**
+ * Registrar realizacao: quem gere a sessao, e so depois do inicio — o backend
+ * recusa marcar como realizado um atendimento futuro.
+ */
+export function podeRegistrarRealizacao(
+  atendimento: Atendimento,
+  contexto: ContextoMonitoria,
+  agora: Date = new Date(),
+): boolean {
+  return (
+    podeGerirAtendimento(atendimento, contexto) &&
+    new Date(atendimento.inicio).getTime() <= agora.getTime()
+  );
+}
+
+/**
+ * Inscrever-se numa sessao: so MONITORADO (`exigirPapel(MONITORADO)`), com
+ * `aceitaInscricao` calculado pelo servidor, sem inscricao ativa.
+ *
+ * Quem desistiu PODE voltar: o backend reaproveita a inscricao CANCELADA.
+ */
+export function podeSeInscreverEmAtendimento(
+  atendimento: Atendimento,
+  contexto: ContextoMonitoria,
+): boolean {
+  if (contexto.meuPapel !== PapelMonitoria.MONITORADO) return false;
+  if (!atendimento.aceitaInscricao) return false;
+
+  const inscricao = minhaInscricao(atendimento);
+  return !inscricao || inscricao.status === StatusInscricao.CANCELADA;
+}
+
+/** Desistir: o proprio monitorado, com inscricao ativa, enquanto AGENDADO. */
+export function podeDesistirDaInscricao(atendimento: Atendimento): boolean {
+  return (
+    atendimento.status === StatusAtendimento.AGENDADO &&
+    minhaInscricao(atendimento)?.status === StatusInscricao.INSCRITO
   );
 }
 
