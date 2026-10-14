@@ -16,6 +16,7 @@ import { Alert } from '@/components/ui/alert';
 import { Carregando } from '@/components/ui/estados';
 import { toast } from '@/components/ui/toast';
 import { agendarAtendimento } from '../api/atendimentos.service';
+import { HorariosOcupados } from './horarios-ocupados';
 import { listarParticipantes } from '@/features/monitorias/api/monitorias.service';
 import { listarDisponibilidades } from '@/features/disponibilidades/api/disponibilidades.service';
 import { useContextoMonitoria } from '@/providers/monitoria-provider';
@@ -500,6 +501,19 @@ function ConteudoFormularioAgendamento() {
                 <Info className="h-3.5 w-3.5 shrink-0" aria-hidden />O atendimento precisa caber
                 inteiro dentro de uma dessas faixas, no mesmo dia.
               </p>
+
+              {/*
+                Recolhido e carregado so ao abrir. A `key` reinicia o bloco ao
+                trocar de monitor, para nao mostrar aberta a agenda de outro.
+              */}
+              <div className="mt-3">
+                <HorariosOcupados
+                  key={monitorEscolhido}
+                  monitoriaId={monitoria.id}
+                  monitorParticipanteId={monitorEscolhido!}
+                  oferecerEntrar={!souMonitor}
+                />
+              </div>
             </>
           )}
         </CardConteudo>
