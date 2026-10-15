@@ -120,3 +120,47 @@ export function rotuloDia(instante: string | Date, agora: Date, fuso: string): s
   const semFeira = texto.replace('-feira', '');
   return semFeira.charAt(0).toUpperCase() + semFeira.slice(1);
 }
+
+export interface GrupoDoDia<T> {
+  /** "2026-10-15", no fuso da instituicao. */
+  chave: string;
+  itens: T[];
+}
+
+/**
+ * Agrupa por dia de CALENDARIO no fuso da instituicao, preservando a ordem
+ * recebida.
+ *
+ * A ordem vem do servidor (`ordenarPor=inicio`, asc ou desc) e e mantida tanto
+ * entre os dias quanto dentro de cada dia: reordenar aqui so a pagina atual
+ * produziria uma ordem falsa (AD-F08). Agrupar por `toDateString()` do
+ * navegador colocaria um atendimento das 22h de Sao Paulo no dia seguinte para
+ * quem esta em outro fuso.
+ */
+export function agruparPorDia<T extends { inicio: string }>(
+  itens: T[],
+  fuso: string,
+): GrupoDoDia<T>[] {
+  const grupos: GrupoDoDia<T>[] = [];
+  const porChave = new Map<string, GrupoDoDia<T>>();
+
+  for (const item of itens) {
+    const chave = chaveDia(item.inicio, fuso);
+    let grupo = porChave.get(chave);
+
+    if (!grupo) {
+      grupo = { chave, itens: [] };
+      porChave.set(chave, grupo);
+      grupos.push(grupo);
+    }
+
+    grupo.itens.push(item);
+  }
+
+  return grupos;
+}
+
+/** "qua, 15/10" — complemento de cabecalho quando o rotulo e relativo ("Hoje"). */
+export function dataCurta(instante: string | Date, fuso: string): string {
+  return `${diaSemanaCurto(instante, fuso)}, ${format(noFuso(instante, fuso), 'dd/MM')}`;
+}

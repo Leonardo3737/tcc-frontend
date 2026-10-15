@@ -9,7 +9,6 @@ import { Alert } from '@/components/ui/alert';
 import { classesBotao } from '@/components/ui/button';
 import { Select } from '@/components/ui/campo';
 import { EstadoErro, EstadoVazio } from '@/components/ui/estados';
-import { SkeletonLista } from '@/components/ui/skeleton';
 import { rotas } from '@/config/rotas';
 import { useFiltrosUrl } from '@/hooks/use-filtros-url';
 import { chaves } from '@/lib/query/chaves';
@@ -17,7 +16,7 @@ import { useContextoMonitoria } from '@/providers/monitoria-provider';
 import { useSessao } from '@/providers/sessao-provider';
 import { StatusAtendimento, StatusMonitoria } from '@/types/dominio';
 import { listarAtendimentosDaMonitoria } from '../api/atendimentos.service';
-import { CartaoAtendimento, SkeletonCartaoAtendimento } from './cartao-atendimento';
+import { AgendaPorDia, SkeletonAgendaPorDia } from './agenda-por-dia';
 
 /**
  * Agenda da monitoria.
@@ -95,7 +94,7 @@ export function PainelAtendimentosMonitoria() {
         </Alert>
       )}
 
-      {consulta.isPending && <SkeletonLista itens={3} item={SkeletonCartaoAtendimento} />}
+      {consulta.isPending && <SkeletonAgendaPorDia />}
 
       {consulta.isError && (
         <EstadoErro erro={consulta.error} aoTentarNovamente={() => void consulta.refetch()} />
@@ -126,16 +125,7 @@ export function PainelAtendimentosMonitoria() {
 
       {consulta.isSuccess && consulta.data.dados.length > 0 && (
         <>
-          <div className="grid gap-3 lg:grid-cols-2">
-            {consulta.data.dados.map((atendimento) => (
-              <CartaoAtendimento
-                key={atendimento.id}
-                atendimento={atendimento}
-                mostrarMonitoria={false}
-                fuso={fuso}
-              />
-            ))}
-          </div>
+          <AgendaPorDia atendimentos={consulta.data.dados} fuso={fuso} mostrarMonitoria={false} />
 
           <Paginacao
             meta={consulta.data.meta}
