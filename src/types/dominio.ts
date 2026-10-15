@@ -142,6 +142,13 @@ export interface RespostaLogin {
 
 export interface LimitesAgendamento {
   duracaoMinimaMinutos: number;
+  /**
+   * Duracao sugerida (B1). E o tamanho de slot usado por
+   * GET /monitorias/:id/atendimentos/horarios-livres e o padrao dos botoes de
+   * duracao no agendamento — por isso vem do servidor em vez de ser um numero
+   * escolhido aqui.
+   */
+  duracaoPadraoMinutos: number;
   duracaoMaximaMinutos: number;
   antecedenciaMinimaMinutos: number;
   cancelamentoAntecedenciaMinutos: number;
@@ -278,6 +285,48 @@ export interface Atendimento {
   historico?: EventoHistorico[];
 }
 
+/**
+ * Um slot sugerido por GET /monitorias/:id/atendimentos/horarios-livres (A1).
+ *
+ * SUGESTAO, NAO RESERVA: o servidor calcula no instante da consulta, ja
+ * descontando a agenda do monitor, a do proprio solicitante (inclusive em
+ * outras monitorias) e a antecedencia minima. Entre a resposta e o POST outra
+ * pessoa pode ocupar o mesmo horario — a verificacao autoritativa continua no
+ * agendamento, e o 409 que vier dali esta correto.
+ */
+export interface HorarioLivre {
+  inicio: string;
+  fim: string;
+  monitorParticipanteId: string;
+  nomeMonitor: string;
+}
+
+export interface HorariosLivresResposta {
+  horarios: HorarioLivre[];
+  /** Lista cortada no teto de 500 slots. Reduza a janela ou filtre por monitor. */
+  truncado: boolean;
+}
+
+/** Resultado de UMA ocorrencia da serie (A2). A ordem de entrada e preservada. */
+export interface ResultadoDeOcorrencia {
+  inicio: string;
+  fim: string;
+  criado: boolean;
+  atendimentoId?: string;
+  /** Motivo de dominio da recusa. So vem quando `criado` e false. */
+  erro?: string;
+}
+
+/**
+ * Resposta do lote. SUCESSO PARCIAL por natureza: um feriado no meio da serie
+ * recusa aquela data e cria as demais, por isso vem 200 e nao 201.
+ */
+export interface LoteDeAtendimentos {
+  criados: number;
+  recusados: number;
+  resultados: ResultadoDeOcorrencia[];
+}
+
 // ---------------------------------------------------------------------------
 // Avaliacoes, materiais, gamificacao, analytics
 // ---------------------------------------------------------------------------
@@ -331,6 +380,23 @@ export interface ResumoPontuacao {
   total: number;
   porTipo: Record<string, number>;
   ultimosEventos: EventoPontuacao[];
+}
+
+/**
+ * Quanto vale cada tipo de evento (B2).
+ *
+ * `pontos: null` significa VARIAVEL, nao zero: AVALIACAO_RECEBIDA vale a
+ * propria nota (1 a 5). Exibir "0 pontos" nesse caso anunciaria o oposto do que
+ * acontece.
+ */
+export interface RegraDePontuacao {
+  tipo: TipoPontuacao;
+  pontos: number | null;
+  descricao: string;
+}
+
+export interface RegrasDePontuacao {
+  regras: RegraDePontuacao[];
 }
 
 export interface ContagemPorStatus {

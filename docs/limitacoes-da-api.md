@@ -4,7 +4,12 @@
 > **Nada foi contornado com solução fictícia**: onde a API não oferece algo, a interface
 > declara a ausência ou deriva o dado de forma explícita a partir do que existe.
 >
-> O backend não foi alterado.
+> **Revisão de 2026-10-15.** Uma auditoria de usabilidade identificou pontos de atrito que
+> não podiam ser resolvidos no cliente. Eles viraram um pedido ao backend
+> (`prompt-ajustes-backend-usabilidade.md`), e os ajustes A1–A4/B1–B2 foram implementados.
+> A limitação **nº 2 deixou de existir**; a nº 4 continua, com o escopo reduzido. As demais
+> seguem válidas. As que foram resolvidas estão marcadas, não apagadas: o registro de que
+> existiram é parte do raciocínio do projeto.
 
 ---
 
@@ -23,18 +28,21 @@ botão de download. Oferecer e falhar seria pior que a ausência declarada.
 
 ---
 
-## 2. Não existe endpoint de "avaliações pendentes"
+## 2. ~~Não existe endpoint de "avaliações pendentes"~~ — RESOLVIDA em 2026-10-15
 
-**O que a API oferece:** `inscricoes[].podeAvaliar`, calculado no servidor
-(`REALIZADO` + `PRESENTE` + ainda não avaliado), presente em todas as rotas de atendimento.
+**Como era:** não havia recorte no servidor. O dashboard pedia os 20 atendimentos
+`REALIZADO` mais recentes e filtrava os que tinham a própria inscrição com `podeAvaliar`.
+Quem tivesse histórico maior que 20 **não via parte das pendências**, e o contador saía
+errado — sem nenhum sinal de que estava incompleto.
 
-**O que o frontend faz:** o dashboard do aluno deriva a lista pedindo os atendimentos
-`REALIZADO` mais recentes (`GET /atendimentos/meus?status=REALIZADO&limite=20`) e filtrando
-os que têm a própria inscrição com `podeAvaliar`.
+**Como ficou:** `GET /atendimentos/meus?pendentesDeAvaliacao=true` (ajuste A4). O recorte é
+feito no servidor, com o mesmo critério que decide `podeAvaliar`, então lista e botão não
+podem discordar. O mesmo ajuste trouxe `aguardandoRegistro=true`, que resolve a pendência
+simétrica do monitor — sessão que já aconteceu e continua `AGENDADA` — e que **não existia
+em tela nenhuma**, apesar de travar a cadeia inteira: sem `REALIZADO` + `PRESENTE`, o aluno
+não pode avaliar (RN06) e ninguém pontua.
 
-**Limitação residual:** a contagem cobre os **20 atendimentos mais recentes**, não o
-histórico inteiro. Ampliar isso exigiria um endpoint dedicado ou paginação completa no
-cliente — que gastaria requisições sem ganho proporcional. A tela informa o recorte.
+As duas alimentam a fila "O que precisa de você" no dashboard.
 
 ---
 
@@ -65,6 +73,11 @@ em que a própria inscrição está `PRESENTE`. O cartão diz "nos 20 mais recen
 `/gamificacao/meus-pontos` daria o número certo, mas acopla um indicador acadêmico à
 gamificação — que pode ter suas regras alteradas sem que isso signifique mudança no
 histórico de atendimentos.
+
+**Escopo reduzido em 2026-10-15:** a aproximação continua, mas agora vale só para este
+indicador. O que dependia dela e tinha consequência — a lista de avaliações pendentes —
+passou a vir do servidor (ver nº 2). Um indicador com recorte declarado é aceitável; uma
+fila de pendências incompleta não era.
 
 ---
 

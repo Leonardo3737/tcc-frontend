@@ -72,7 +72,7 @@ verificar('login da aluna', bool(alu))
 
 print('\n== Disciplina e monitoria (professor) ==')
 st, disc = chamar('POST', API + '/disciplinas', prof,
-                  {'codigo': f'FE{sufixo}', 'nome': f'Frontend E2E {sufixo}'})
+                  {'nome': f'Frontend E2E {sufixo}'})
 verificar('cria disciplina', st == 201, f'({st})')
 
 st, mon = chamar('POST', API + '/monitorias', prof,
@@ -131,7 +131,7 @@ if st == 201:
     verificar('origem = OFERTA_MONITOR', atend['origem'] == 'OFERTA_MONITOR')
     verificar('aceitaInscricao calculado no servidor', atend['aceitaInscricao'] is True)
     verificar('resumo da monitoria vem junto (sem N+1)',
-              atend.get('monitoria', {}).get('codigoDisciplina') == f'FE{sufixo}')
+              atend.get('monitoria', {}).get('codigoDisciplina') == disc['codigo'])
 
     print('\n== Conflito de horario (RN03) ==')
     st2, conflito = chamar('POST', f'{API}/monitorias/{mid}/atendimentos', alu,

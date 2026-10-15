@@ -9,7 +9,11 @@ import { Alert } from '@/components/ui/alert';
 import { EstadoErro, EstadoVazio } from '@/components/ui/estados';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DataRelativa } from '@/components/comum/data-relativa';
-import { buscarMeusPontos, buscarRanking } from '../api/gamificacao.service';
+import {
+  buscarMeusPontos,
+  buscarRanking,
+  buscarRegrasDePontuacao,
+} from '../api/gamificacao.service';
 import { useSessao } from '@/providers/sessao-provider';
 import { chaves } from '@/lib/query/chaves';
 import { cn, iniciais } from '@/lib/utils';
@@ -18,13 +22,12 @@ import { TipoPontuacao, type PosicaoRanking, type ResumoPontuacao } from '@/type
 const LIMITE_RANKING = 20;
 
 /**
- * Descricao de cada tipo de evento que gera pontos.
+ * Rotulo e icone de cada tipo de evento.
  *
- * NAO ha numero fixo aqui de proposito. A tabela de pontos vive no backend
- * (`GamificacaoService.PONTOS`) e nao e exposta por nenhum endpoint — escrever
- * "10 pontos" na interface criaria uma segunda fonte de verdade que passaria a
- * mentir no dia em que o balanceamento mudasse. O valor real de cada evento
- * aparece no extrato, onde vem do servidor.
+ * Os NUMEROS nao estao aqui: eles vem de `GET /gamificacao/regras` (B2).
+ * Escrever "10 pontos" nesta constante criaria uma segunda fonte de verdade que
+ * passaria a mentir no primeiro rebalanceamento. A descricao tambem vem do
+ * servidor; o texto abaixo e so o complemento de leitura da tela.
  */
 const TIPOS: Record<
   string,
@@ -44,7 +47,7 @@ const TIPOS: Record<
   },
   [TipoPontuacao.AVALIACAO_RECEBIDA]: {
     rotulo: 'Avaliação recebida',
-    descricao: 'Um monitorado avaliou o seu atendimento. Vale a própria nota.',
+    descricao: 'Um monitorado avaliou o seu atendimento.',
     icone: Star,
     quem: 'monitor',
   },
@@ -456,6 +459,25 @@ function DivisaoPorTipo({
  * que nao entra no ranking, este cartao e o que explica a ausencia.
  */
 function CartaoComoFunciona({ ehAluno }: { ehAluno: boolean }) {
+  /**
+   * B2 — a tabela de pontos vem do servidor.
+   *
+   * Antes deste endpoint o cartão explicava que existem pontos sem poder dizer
+   * quanto cada coisa vale, o que é justamente a pergunta que o ranking levanta.
+   * Enquanto a consulta não responde, a lista aparece sem os valores — é a
+   * mesma tela de antes, não um estado quebrado.
+   */
+  const regras = useQuery({
+    queryKey: chaves.gamificacao.regras,
+    queryFn: buscarRegrasDePontuacao,
+    // Muda só em deploy: não faz sentido revalidar a cada foco de janela.
+    staleTime: 60 * 60 * 1000,
+  });
+
+  const pontosPorTipo = new Map(
+    (regras.data?.regras ?? []).map((regra) => [regra.tipo as string, regra]),
+  );
+
   return (
     <Card>
       <CardCabecalho titulo="Como os pontos funcionam" />
@@ -463,15 +485,31 @@ function CartaoComoFunciona({ ehAluno }: { ehAluno: boolean }) {
         <ul className="space-y-3">
           {Object.entries(TIPOS).map(([tipo, info]) => {
             const Icone = info.icone;
+            const regra = pontosPorTipo.get(tipo);
 
             return (
               <li key={tipo} className="flex gap-2.5">
                 <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primaria-suave text-primaria">
                   <Icone className="h-3.5 w-3.5" aria-hidden />
                 </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-texto">{info.rotulo}</span>
-                  <span className="block text-xs text-texto-suave">{info.descricao}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm font-semibold text-texto">{info.rotulo}</span>
+
+                    {/*
+                      `pontos: null` significa VARIÁVEL, não zero — avaliação
+                      recebida vale a própria nota. Exibir "0 pontos" aqui
+                      anunciaria o oposto do que acontece.
+                    */}
+                    {regra && (
+                      <span className="shrink-0 text-xs font-semibold tabular-nums text-primaria">
+                        {regra.pontos === null ? '1 a 5 pts' : `+${regra.pontos} pts`}
+                      </span>
+                    )}
+                  </span>
+                  <span className="block text-xs text-texto-suave">
+                    {regra?.descricao ?? info.descricao}
+                  </span>
                 </span>
               </li>
             );

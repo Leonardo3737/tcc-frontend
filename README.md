@@ -315,7 +315,7 @@ restrita" para aluno.
 | Camada | Ferramenta | O que cobre |
 |---|---|---|
 | Unidade e componente | Vitest + Testing Library | **101 testes** |
-| Integração real | scripts em `test/integracao/` | **54 verificações** contra NestJS + PostgreSQL |
+| Integração real | scripts em `test/integracao/` | **99 verificações** contra NestJS + PostgreSQL |
 
 Mocks existem **apenas** nos testes de unidade. A integração usa a API real.
 
@@ -331,6 +331,7 @@ Mocks existem **apenas** nos testes de unidade. A integração usa a API real.
 | `fuso.spec.ts` | 13 — conversão no fuso da instituição, ida e volta, dia da semana 0 = domingo |
 | `avaliacao.spec.tsx` | 7 — corpo sem autor/inscrição, conflito do backend, estrelas como `radiogroup` |
 | `configuracao.spec.ts` | 9 — política de produção sem quebrar o build |
+| `recorrencia.spec.ts` | 7 — expansão semanal da série em **hora local**, com um caso que falha se a implementação somar 7 × 86.400.000 ms; e as opções de duração contra os limites da instituição |
 
 ### Integração
 
@@ -346,6 +347,14 @@ que **são** as regras (RN09, RN03, fora da disponibilidade, encerrar com agenda
 `seguranca.py` (27) cobre os quatro cenários de sessão, atributos do cookie, tentativa de
 forjar `Authorization` no proxy, autorização por perfil e por participação, logout e
 sanidade das respostas de erro.
+
+`ajustes-api.py` (45) exercita os endpoints acrescentados em 2026-10-15 pelo mesmo caminho
+que a interface usa: slots livres (A1, incluindo a recusa de janela acima de 60 dias e o
+efeito de `duracaoMinutos`), série recorrente com **sucesso parcial** (A2), os filtros
+derivados e as recusas 400 fora de `/atendimentos/meus` (A4), promoção a monitor com o
+vínculo antigo preservado como histórico (A3), e a tabela de pontos (B2). Leva ~70 s a
+mais: para provar que a fila de registro filtra de verdade, ele agenda uma sessão para
+daqui a um minuto e espera ela começar.
 
 ---
 

@@ -3,6 +3,8 @@ import type { RespostaPaginada } from '@/types/api';
 import type {
   Atendimento,
   EventoHistorico,
+  HorariosLivresResposta,
+  LoteDeAtendimentos,
   ModalidadeAtendimento,
   StatusAtendimento,
 } from '@/types/dominio';
@@ -29,6 +31,15 @@ export interface FiltroAtendimentos {
   monitorParticipanteId?: string;
   /** Somente sessões AGENDADAS, com vaga e ainda não iniciadas. */
   aceitandoInscricao?: boolean;
+  /**
+   * A4 — sessões AGENDADAS que já começaram e em que EU sou o monitor.
+   *
+   * Só funciona em `/atendimentos/meus`; nas demais rotas o backend devolve 400
+   * de propósito, em vez de ignorar em silêncio.
+   */
+  aguardandoRegistro?: boolean;
+  /** A4 — REALIZADOS em que estive PRESENTE e ainda não avaliei. Idem acima. */
+  pendentesDeAvaliacao?: boolean;
   ordenarPor?: CampoOrdenacao;
   direcao?: DirecaoOrdenacao;
   pagina?: number;
@@ -51,6 +62,38 @@ export function listarAtendimentosDaMonitoria(
   return apiCliente.get<RespostaPaginada<Atendimento>>(`/monitorias/${monitoriaId}/atendimentos`, {
     query: { ...filtro },
   });
+}
+
+export interface FiltroHorariosLivres {
+  /** Janela de busca, em ISO 8601. Máximo de 60 dias — acima disso o backend recusa com 400. */
+  de: string;
+  ate: string;
+  /** Tamanho do slot. Omitido, o servidor usa `configuracao.agendamento.duracaoPadraoMinutos`. */
+  duracaoMinutos?: number;
+  /** Omitido, considera todos os monitores ativos da monitoria. */
+  monitorParticipanteId?: string;
+}
+
+/**
+ * A1 — horários concretos e clicáveis, para substituir data/início/fim digitados.
+ *
+ * Esta conta NÃO pode ser feita no cliente, e a tentativa produziria horários
+ * que o servidor recusa: a janela de disponibilidade é validada em SQL com
+ * `AT TIME ZONE`, as constraints EXCLUDE da RN03 também batem contra as
+ * inscrições do solicitante em monitorias que ele não pode ler, e a
+ * antecedência mínima depende do relógio do servidor.
+ *
+ * O resultado é uma SUGESTÃO do instante da consulta, não uma reserva. O 409 no
+ * agendamento continua possível e continua correto.
+ */
+export function listarHorariosLivres(
+  monitoriaId: string,
+  filtro: FiltroHorariosLivres,
+): Promise<HorariosLivresResposta> {
+  return apiCliente.get<HorariosLivresResposta>(
+    `/monitorias/${monitoriaId}/atendimentos/horarios-livres`,
+    { query: { ...filtro } },
+  );
 }
 
 export function detalharAtendimento(atendimentoId: string): Promise<Atendimento> {
@@ -89,6 +132,38 @@ export function agendarAtendimento(
   dados: DadosAgendamento,
 ): Promise<Atendimento> {
   return apiCliente.post<Atendimento>(`/monitorias/${monitoriaId}/atendimentos`, dados);
+}
+
+/** Campos que todas as sessões da série compartilham — os mesmos do avulso, menos o horário. */
+export interface DadosAgendamentoEmLote {
+  monitorParticipanteId?: string;
+  assunto: string;
+  modalidade: ModalidadeAtendimento;
+  local?: string;
+  vagas?: number;
+  /** 1 a 30 ocorrências. ISO 8601 montado no fuso da INSTITUIÇÃO. */
+  ocorrencias: Array<{ inicio: string; fim: string }>;
+}
+
+/**
+ * A2 — série de sessões recorrentes em uma requisição.
+ *
+ * SUCESSO PARCIAL, e é por isso que devolve 200 e não 201: cada ocorrência roda
+ * na própria transação no servidor, então um feriado ou choque pontual recusa
+ * apenas aquela data e cria as demais. Quem chama precisa ler `resultados` —
+ * tratar como "deu certo" porque não houve exceção esconderia as recusas.
+ *
+ * Os monitorados recebem UM aviso referente à primeira sessão, mencionando as
+ * demais; o backend não emite um evento por ocorrência.
+ */
+export function agendarAtendimentosEmLote(
+  monitoriaId: string,
+  dados: DadosAgendamentoEmLote,
+): Promise<LoteDeAtendimentos> {
+  return apiCliente.post<LoteDeAtendimentos>(
+    `/monitorias/${monitoriaId}/atendimentos/lote`,
+    dados,
+  );
 }
 
 export function inscreverEmAtendimento(atendimentoId: string): Promise<Atendimento> {

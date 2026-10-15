@@ -153,3 +153,25 @@ export function encerrarParticipacao(
     `/monitorias/${monitoriaId}/participantes/${participanteId}/encerrar`,
   );
 }
+
+/**
+ * A3 — MONITORADO vira MONITOR em uma única operação atômica.
+ *
+ * Substitui a sequência `encerrarParticipacao` + `habilitarMonitor`, que não
+ * era atômica: falhando o segundo passo, o aluno ficava sem vínculo nenhum na
+ * monitoria — perdia o que tinha sem ganhar o novo.
+ *
+ * As inscrições ativas dele em atendimentos desta monitoria são CANCELADAS pelo
+ * servidor, e ele é avisado disso no mesmo e-mail da promoção. Quem chama
+ * precisa dizer isso ao professor ANTES de confirmar.
+ *
+ * `participanteId` é o id do VÍNCULO, não o do usuário.
+ */
+export function promoverAMonitor(
+  monitoriaId: string,
+  participanteId: string,
+): Promise<Participante> {
+  return apiCliente.post<Participante>(
+    `/monitorias/${monitoriaId}/participantes/${participanteId}/promover-a-monitor`,
+  );
+}

@@ -283,6 +283,70 @@ passaram de 500 para a tela de espera; login e proxy devolvem a resposta marcada
 
 ---
 
+## AD-F14 — Escolher horário é clicar, e o cálculo é do servidor
+
+**Contexto.** Agendar era o passo mais caro do sistema: três campos digitados (data, início,
+término), com a disponibilidade do monitor exibida ao lado apenas como texto. O usuário
+convertia a recorrência semanal numa data concreta de cabeça, digitava, e com frequência
+recebia 409 de "horário fora da disponibilidade" ou de conflito.
+
+**A tentação, e por que foi recusada.** O frontend tem a disponibilidade semanal e consegue
+listar os atendimentos agendados do monitor — dava para gerar os slots no cliente. Seria
+errado, por três motivos independentes:
+
+1. a validação de janela roda no PostgreSQL com `EXTRACT(DOW ... AT TIME ZONE)`;
+   reimplementá-la em JavaScript, atravessando horário de verão, produziria divergência
+   silenciosa;
+2. as constraints `EXCLUDE` da RN03 também recusam sobreposição com as inscrições do
+   **próprio solicitante em outras monitorias** — que ele não tem permissão para ler;
+3. antecedência mínima e "já começou" dependem do relógio do servidor.
+
+Uma lista montada no cliente ofereceria horários que o servidor recusa. Isso é **pior que
+não oferecer nada**: troca um erro que a pessoa entende ("não digitei um horário válido")
+por um que ela não entende ("cliquei no que o sistema me ofereceu e deu erro").
+
+**Decisão.** O cálculo virou `GET /monitorias/:id/atendimentos/horarios-livres` (ajuste A1).
+O `<SeletorDeHorario>` é um **método de entrada** dos três campos que já existiam, não um
+caminho paralelo: ao clicar num slot, ele faz `setValue` em `data`, `horaInicio` e
+`horaFim`. Validação, resumo de confirmação e envio continuam lendo os mesmos campos —
+dois caminhos divergiriam no primeiro ajuste.
+
+**O caminho manual continua.** Escondido atrás de "Informar horário manualmente", para
+duração fora das sugeridas ou data além da janela consultada. Remover capacidade não é
+melhorar usabilidade.
+
+**Sugestão, não reserva.** Entre a listagem e o envio outra pessoa pode ocupar o slot. O
+409 que vier daí está correto, e o formulário invalida o cache dos horários ao recebê-lo.
+
+---
+
+## AD-F15 — Série recorrente: sucesso parcial é o caso normal, não a exceção
+
+**Contexto.** Monitoria é semanal. Abrir 15 sessões uma a uma, repetindo assunto,
+modalidade e local, é trabalho que ninguém conclui — abre duas e desiste.
+
+**Decisão.** `POST /monitorias/:id/atendimentos/lote` (ajuste A2), com até 30 ocorrências.
+Cada uma roda na própria transação no servidor, então um feriado ou choque pontual recusa
+só aquela data.
+
+**A consequência na interface.** Como a criação é parcial por natureza, "não lançou
+exceção" **não** significa "deu tudo certo". Por isso a mutação do lote é separada da
+avulsa: com zero recusas, segue para a agenda com um toast; com qualquer recusa, a tela
+vira um relatório linha a linha, dizendo quais datas ficaram de fora e por quê. Esconder
+isso atrás de um toast verde obrigaria a pessoa a conferir a agenda inteira para descobrir.
+
+**Expansão correta das semanas.** `ocorrenciasSemanais` volta à data/hora **local** da
+instituição, anda em dias de calendário e remonta o instante. Somar `7 × 86.400.000 ms`
+pareceria equivalente e não é: numa virada de horário de verão a semana tem 167 ou 169
+horas, e o deslocamento de uma hora jogaria a sessão para fora da faixa declarada — que é
+expressa em hora local. Há teste que falha com a soma ingênua.
+
+**A avalanche de e-mail, resolvida no backend.** Um lote de 16 sessões numa monitoria com
+20 monitorados emitiria 320 avisos. O backend emite **um** evento por lote, mencionando as
+demais sessões.
+
+---
+
 ## O que foi deliberadamente NÃO feito
 
 | Item | Motivo |

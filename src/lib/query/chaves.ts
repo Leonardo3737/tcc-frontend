@@ -58,6 +58,13 @@ export const chaves = {
       ['monitorias', id, 'disponibilidades', filtro] as const,
     atendimentos: (id: string, filtro: Record<string, unknown>) =>
       ['monitorias', id, 'atendimentos', filtro] as const,
+    /**
+     * Fica sob o escopo da monitoria para ser invalidada junto com ela: depois
+     * de agendar, os slots ocupados mudam, e uma chave fora do escopo
+     * continuaria oferecendo o horário que acabou de ser tomado.
+     */
+    horariosLivres: (id: string, filtro: Record<string, unknown>) =>
+      ['monitorias', id, 'horarios-livres', filtro] as const,
     materiais: (id: string, filtro: Record<string, unknown>) =>
       ['monitorias', id, 'materiais', filtro] as const,
     indicadores: (id: string) => ['monitorias', id, 'indicadores'] as const,
@@ -74,6 +81,8 @@ export const chaves = {
 
   gamificacao: {
     raiz: ['gamificacao'] as const,
+    /** Tabela de pontos: muda só em deploy, então vive em cache longo. */
+    regras: ['gamificacao', 'regras'] as const,
     ranking: (filtro: Record<string, unknown>) => ['gamificacao', 'ranking', filtro] as const,
     meusPontos: (filtro: Record<string, unknown>) =>
       ['gamificacao', 'meus-pontos', filtro] as const,

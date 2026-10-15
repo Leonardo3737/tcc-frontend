@@ -38,6 +38,7 @@ export async function buscarConfiguracao(): Promise<ConfiguracaoInstituicao> {
       fusoHorario: FUSO_PADRAO,
       agendamento: {
         duracaoMinimaMinutos: 15,
+        duracaoPadraoMinutos: 60,
         duracaoMaximaMinutos: 240,
         antecedenciaMinimaMinutos: 0,
         cancelamentoAntecedenciaMinutos: 0,
