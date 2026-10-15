@@ -2,10 +2,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { CalendarClock, GraduationCap, Star } from 'lucide-react';
+import { CalendarClock, GraduationCap } from 'lucide-react';
 
 import { classesBotao } from '@/components/ui/button';
-import { Card, CardCabecalho, CardConteudo } from '@/components/ui/card';
 import { Alert } from '@/components/ui/alert';
 import { BadgePapel } from '@/components/ui/badge';
 import { EstadoVazio } from '@/components/ui/estados';
@@ -16,6 +15,7 @@ import { CartaoMonitoria } from '@/features/monitorias/components/cartao-monitor
 import { listarMeusAtendimentos } from '@/features/atendimentos/api/atendimentos.service';
 import { listarMinhasMonitorias } from '@/features/monitorias/api/monitorias.service';
 import { buscarMeusPontos } from '@/features/gamificacao/api/gamificacao.service';
+import { FilaDePendencias } from './fila-pendencias';
 import { useSessao } from '@/providers/sessao-provider';
 import { chaves } from '@/lib/query/chaves';
 import { rotas } from '@/config/rotas';
@@ -28,9 +28,10 @@ import { PapelMonitoria, StatusAtendimento, StatusInscricao } from '@/types/domi
  * visual do modelo: a mesma pessoa aparece como MONITOR em uma linha e
  * MONITORADO em outra.
  *
- * "Avaliacoes pendentes" nao e um endpoint: e derivado dos atendimentos
- * REALIZADOS em que a minha inscricao veio marcada com `podeAvaliar` — flag que
- * o proprio backend calcula (REALIZADO + PRESENTE + ainda nao avaliado).
+ * As pendencias (presenca a registrar, avaliacao a dar) ficam em
+ * <FilaDePendencias>, que as busca pelos filtros derivados do servidor. Antes
+ * elas eram aproximadas aqui, filtrando os 20 realizados mais recentes — quem
+ * tinha historico maior nao via parte delas.
  */
 export function DashboardAluno() {
   const { fuso } = useSessao();
@@ -52,9 +53,9 @@ export function DashboardAluno() {
   });
 
   /**
-   * Realizados recentes, para achar o que ainda posso avaliar.
-   * Não existe endpoint "avaliações pendentes"; esta é a forma correta de
-   * derivá-la sem inventar contrato.
+   * Realizados recentes, só para o indicador de presenças. O que está pendente
+   * de avaliação não sai mais daqui: vem do filtro `pendentesDeAvaliacao`,
+   * dentro de <FilaDePendencias>.
    */
   const realizados = useQuery({
     queryKey: chaves.atendimentos.meus({ status: StatusAtendimento.REALIZADO, limite: 20 }),
@@ -71,10 +72,6 @@ export function DashboardAluno() {
     queryKey: chaves.gamificacao.meusPontos({}),
     queryFn: () => buscarMeusPontos(),
   });
-
-  const pendentesDeAvaliacao = (realizados.data?.dados ?? []).filter((atendimento) =>
-    atendimento.inscricoes?.some((inscricao) => inscricao.souEu && inscricao.podeAvaliar),
-  );
 
   const souMonitorEmAlguma = (monitorias.data?.dados ?? []).some(
     (monitoria) => monitoria.meuPapel === PapelMonitoria.MONITOR,
@@ -103,37 +100,7 @@ export function DashboardAluno() {
         <Indicador rotulo="Pontos" valor={pontos.data?.total ?? '—'} />
       </FaixaIndicadores>
 
-      {pendentesDeAvaliacao.length > 0 && (
-        <Card className="border-alerta/40">
-          <CardCabecalho
-            titulo={`${pendentesDeAvaliacao.length} atendimento(s) aguardando sua avaliação`}
-            descricao="Só quem teve presença registrada pode avaliar (RN06)."
-          />
-          <CardConteudo>
-            <ul className="space-y-2">
-              {pendentesDeAvaliacao.slice(0, 3).map((atendimento) => (
-                <li key={atendimento.id}>
-                  <Link
-                    href={rotas.atendimento(atendimento.id)}
-                    className="flex items-center gap-3 rounded-lg border border-borda p-3 transition-colors hover:bg-fundo"
-                  >
-                    <Star className="h-4 w-4 shrink-0 text-alerta" aria-hidden />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm text-texto">
-                        {atendimento.assunto}
-                      </span>
-                      <span className="block text-xs text-texto-suave">
-                        {atendimento.monitoria?.nomeDisciplina} · {atendimento.nomeMonitor}
-                      </span>
-                    </span>
-                    <span className="shrink-0 text-xs text-primaria">Avaliar</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </CardConteudo>
-        </Card>
-      )}
+      <FilaDePendencias />
 
       <section aria-labelledby="titulo-minhas-monitorias" className="space-y-3">
         <div className="flex items-center justify-between gap-3">

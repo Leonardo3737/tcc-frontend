@@ -117,7 +117,7 @@ status, corpo, _ = bruto('GET', API + '/alunos?busca=ana', cookie=calu)
 verificar('aluno barrado na busca de alunos (403)', status == 403, f'({status})')
 
 status, corpo, _ = bruto('POST', API + '/disciplinas', cookie=calu,
-                         corpo={'codigo': 'HACK1', 'nome': 'Tentativa'})
+                         corpo={'nome': 'Tentativa'})
 verificar('aluno nao cria disciplina (403)', status == 403, f'({status})')
 
 status, corpo, _ = bruto('GET', BASE + '/disciplinas', cookie=calu, seguir=True)

@@ -1,5 +1,5 @@
 import { apiCliente } from '@/lib/api/cliente';
-import type { PosicaoRanking, ResumoPontuacao } from '@/types/dominio';
+import type { PosicaoRanking, RegrasDePontuacao, ResumoPontuacao } from '@/types/dominio';
 
 /**
  * Gamificacao: pontuacao e ranking.
@@ -22,4 +22,16 @@ export function buscarRanking(filtro: {
 
 export function buscarMeusPontos(filtro: { monitoriaId?: string } = {}): Promise<ResumoPontuacao> {
   return apiCliente.get<ResumoPontuacao>('/gamificacao/meus-pontos', { query: { ...filtro } });
+}
+
+/**
+ * B2 — quanto vale cada tipo de evento.
+ *
+ * Antes deste endpoint a tabela era uma constante privada do backend, e a tela
+ * explicava que existem pontos sem poder dizer quanto cada coisa vale. Escrever
+ * os números aqui criaria uma segunda fonte de verdade que passaria a mentir no
+ * primeiro rebalanceamento — por isso eles vêm do servidor.
+ */
+export function buscarRegrasDePontuacao(): Promise<RegrasDePontuacao> {
+  return apiCliente.get<RegrasDePontuacao>('/gamificacao/regras');
 }

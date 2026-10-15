@@ -25,6 +25,7 @@ export const CONFIGURACAO_TESTE: ConfiguracaoInstituicao = {
   fusoHorario: 'America/Sao_Paulo',
   agendamento: {
     duracaoMinimaMinutos: 15,
+    duracaoPadraoMinutos: 60,
     duracaoMaximaMinutos: 240,
     antecedenciaMinimaMinutos: 0,
     cancelamentoAntecedenciaMinutos: 0,

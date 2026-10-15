@@ -13,7 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
-    "test:integracao": "python test/integracao/fluxo-dominio.py && python test/integracao/seguranca.py"
+    "test:integracao": "python test/integracao/fluxo-dominio.py && python test/integracao/seguranca.py && python test/integracao/ajustes-api.py"
   },
   "dependencies": {
     "@date-fns/tz": "^1.4.1",

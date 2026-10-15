@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { LogOut, UserPlus, Users } from 'lucide-react';
+import { ArrowUpCircle, LogOut, UserPlus, Users } from 'lucide-react';
 import { useState } from 'react';
 
 import { DialogoConfirmacao, useConfirmacao } from '@/components/comum/confirmacao';
@@ -20,7 +20,11 @@ import { chaves } from '@/lib/query/chaves';
 import { iniciais } from '@/lib/utils';
 import { useContextoMonitoria } from '@/providers/monitoria-provider';
 import { PapelMonitoria, StatusParticipacao, type Participante } from '@/types/dominio';
-import { encerrarParticipacao, listarParticipantes } from '../api/monitorias.service';
+import {
+  encerrarParticipacao,
+  listarParticipantes,
+  promoverAMonitor,
+} from '../api/monitorias.service';
 import { DialogoAdicionarParticipante } from './dialogo-adicionar-participante';
 
 /**
@@ -36,6 +40,7 @@ export function PainelParticipantes() {
   const queryClient = useQueryClient();
   const [dialogoAberto, setDialogoAberto] = useState(false);
   const confirmacaoEncerrar = useConfirmacao<Participante>();
+  const confirmacaoPromover = useConfirmacao<Participante>();
 
   const papel = obter('papel');
   const situacao = obter('situacao');
@@ -68,6 +73,27 @@ export function PainelParticipantes() {
      * eles sejam resolvidos antes.
      */
     onError: (erro) => toast.erro('Não foi possível encerrar', mensagemDeErro(erro)),
+  });
+
+  /**
+   * A3 — MONITORADO vira MONITOR em uma operação só.
+   *
+   * Antes eram duas chamadas manuais (encerrar + habilitar), e o professor
+   * precisava conhecer a RN09 para descobrir que a primeira era necessária. Pior:
+   * falhando a segunda, o aluno ficava sem vínculo nenhum.
+   */
+  const promover = useMutation({
+    mutationFn: (participanteId: string) => promoverAMonitor(monitoria.id, participanteId),
+    onSuccess: (participante) => {
+      void queryClient.invalidateQueries({ queryKey: chaves.monitorias.escopo(monitoria.id) });
+      void queryClient.invalidateQueries({ queryKey: chaves.atendimentos.raiz });
+      toast.sucesso(
+        'Promovido a monitor',
+        `${participante.nomeAluno ?? 'O aluno'} agora conduz atendimentos nesta monitoria.`,
+      );
+      confirmacaoPromover.fechar();
+    },
+    onError: (erro) => toast.erro('Não foi possível promover', mensagemDeErro(erro)),
   });
 
   const vendoHistorico = situacao === 'encerrados';
@@ -164,6 +190,12 @@ export function PainelParticipantes() {
                     participante.id === contexto.meuParticipanteId)
                 }
                 aoEncerrar={() => confirmacaoEncerrar.pedirConfirmacao(participante)}
+                podePromover={
+                  capacidades.habilitarMonitor &&
+                  participante.status === StatusParticipacao.ATIVO &&
+                  participante.papel === PapelMonitoria.MONITORADO
+                }
+                aoPromover={() => confirmacaoPromover.pedirConfirmacao(participante)}
               />
             ))}
           </ul>
@@ -189,6 +221,23 @@ export function PainelParticipantes() {
         aviso="O vínculo não é apagado (RN10): ele vira histórico e continua sendo o sujeito dos atendimentos já registrados. Se houver atendimentos agendados ou inscrições ativas, o sistema recusará."
       />
 
+      {/*
+        O aviso de inscrições canceladas não é decoração: o backend cancela as
+        inscrições ativas do aluno nesta monitoria dentro da mesma transação.
+        Quem promove precisa saber disso ANTES, não descobrir pelo e-mail que o
+        aluno recebeu.
+      */}
+      <DialogoConfirmacao
+        aberto={confirmacaoPromover.aberto}
+        aoFechar={confirmacaoPromover.fechar}
+        aoConfirmar={() => promover.mutate(confirmacaoPromover.alvo!.id)}
+        carregando={promover.isPending}
+        titulo="Promover a monitor"
+        descricao={`${confirmacaoPromover.alvo?.nomeAluno ?? 'O aluno'} passa a conduzir atendimentos nesta monitoria, em vez de recebê-los.`}
+        rotuloConfirmar="Promover a monitor"
+        aviso="O vínculo de monitorado é encerrado e vira histórico (RN10), e as inscrições ativas dele em atendimentos desta monitoria são canceladas — um aluno não acumula papéis (RN09). Ele é avisado por e-mail, com a explicação."
+      />
+
       <DialogoAdicionarParticipante
         aberto={dialogoAberto}
         aoFechar={() => setDialogoAberto(false)}
@@ -202,10 +251,14 @@ function LinhaParticipante({
   participante,
   podeEncerrar,
   aoEncerrar,
+  podePromover,
+  aoPromover,
 }: {
   participante: Participante;
   podeEncerrar: boolean;
   aoEncerrar: () => void;
+  podePromover: boolean;
+  aoPromover: () => void;
 }) {
   return (
     <li className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -228,6 +281,17 @@ function LinhaParticipante({
       <div className="flex flex-wrap items-center gap-2">
         <BadgePapel papel={participante.papel} />
         <BadgeStatusParticipacao status={participante.status} />
+
+        {podePromover && (
+          <Button
+            variante="fantasma"
+            tamanho="sm"
+            onClick={aoPromover}
+            iconeEsquerda={<ArrowUpCircle className="h-3.5 w-3.5" aria-hidden />}
+          >
+            Promover a monitor
+          </Button>
+        )}
 
         {podeEncerrar && (
           <Button
