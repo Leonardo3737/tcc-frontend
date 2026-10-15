@@ -5,11 +5,11 @@ import { CalendarX2, Clock } from 'lucide-react';
 import { useId, useState } from 'react';
 
 import { Alert } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { chaves } from '@/lib/query/chaves';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatarHora } from '@/lib/datas/fuso';
 import { agruparPorDia, rotuloDia } from '@/lib/datas/relativa';
+import { chaves } from '@/lib/query/chaves';
 import { cn } from '@/lib/utils';
 import { useSessao } from '@/providers/sessao-provider';
 import type { HorarioLivre } from '@/types/dominio';
@@ -274,23 +274,24 @@ export function SeletorDeDuracao({
 
       <div className="mt-1.5 flex flex-wrap gap-2">
         {opcoes.map((minutos) => (
-          <button
-            key={minutos}
-            type="button"
-            disabled={desabilitado}
-            onClick={() => aoEscolher(minutos)}
-            aria-pressed={valor === minutos}
-            className={cn(
-              'alvo-toque rounded-lg border px-3 py-1.5 text-sm tabular-nums transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaria',
-              'disabled:cursor-not-allowed disabled:opacity-60',
-              valor === minutos
-                ? 'border-primaria bg-primaria text-white'
-                : 'border-borda-forte bg-superficie text-texto hover:border-primaria hover:bg-primaria-suave',
-            )}
-          >
-            {rotuloDuracao(minutos)}
-          </button>
+          isNaN(minutos) ? <></> :
+            <button
+              key={minutos}
+              type="button"
+              disabled={desabilitado}
+              onClick={() => aoEscolher(minutos)}
+              aria-pressed={valor === minutos}
+              className={cn(
+                'alvo-toque rounded-lg border px-3 py-1.5 text-sm tabular-nums transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primaria',
+                'disabled:cursor-not-allowed disabled:opacity-60',
+                valor === minutos
+                  ? 'border-primaria bg-primaria text-white'
+                  : 'border-borda-forte bg-superficie text-texto hover:border-primaria hover:bg-primaria-suave',
+              )}
+            >
+              {rotuloDuracao(minutos)}
+            </button>
         ))}
       </div>
     </div>
