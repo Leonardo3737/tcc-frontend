@@ -1,21 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ban, CheckCircle2, Play } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogConteudo } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/campo';
-import { Alert } from '@/components/ui/alert';
-import { toast } from '@/components/ui/toast';
 import { DialogoConfirmacao } from '@/components/comum/confirmacao';
-import { ativarMonitoria, cancelarMonitoria, encerrarMonitoria } from '../api/monitorias.service';
-import { useContextoMonitoria } from '@/providers/monitoria-provider';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/campo';
+import { Dialog, DialogConteudo } from '@/components/ui/dialog';
+import { toast } from '@/components/ui/toast';
 import { ApiError, mensagemDeErro } from '@/lib/api/erros';
 import { chaves } from '@/lib/query/chaves';
+import { useContextoMonitoria } from '@/providers/monitoria-provider';
 import { StatusMonitoria } from '@/types/dominio';
+import { ativarMonitoria, cancelarMonitoria, encerrarMonitoria } from '../api/monitorias.service';
 
 /**
  * Transicoes de estado da monitoria.
@@ -157,7 +157,7 @@ export function AcoesStatusMonitoria() {
         titulo="Encerrar monitoria"
         descricao="Encerrar arquiva a oferta: todos os vínculos ativos passam a ENCERRADO."
         rotuloConfirmar="Encerrar"
-        aviso="Nada é apagado (RN10) — participantes, atendimentos e materiais continuam consultáveis. Se houver atendimentos AGENDADOS, o backend recusará: cancele cada um antes, para que fiquem no histórico com motivo próprio."
+        aviso="Nada é apagado (RN10) — participantes, atendimentos e materiais continuam consultáveis. Se houver atendimentos AGENDADOS, o sistema recusará: cancele cada um antes, para que fiquem no histórico com motivo próprio."
       />
 
       <Dialog

@@ -133,3 +133,26 @@ export function reagendarAtendimento(
 ): Promise<Atendimento> {
   return apiCliente.post<Atendimento>(`/atendimentos/${atendimentoId}/reagendar`, dados);
 }
+
+/**
+ * Campos editaveis de uma sessao AGENDADA (PATCH /atendimentos/:id).
+ *
+ * Deliberadamente SEM horario, status, modalidade ou monitor: horario muda em
+ * `reagendar` (que valida a disponibilidade e a agenda dos inscritos), status
+ * em `realizar`/`cancelar`, e modalidade e monitor definem a sessao em si.
+ *
+ * So vao no corpo os campos que mudaram — omitir significa "nao mexer". `local`
+ * vazio ('') LIMPA o local; e o unico jeito, porque o DTO nao aceita null.
+ */
+export interface DadosEdicaoAtendimento {
+  assunto?: string;
+  local?: string;
+  vagas?: number;
+}
+
+export function atualizarAtendimento(
+  atendimentoId: string,
+  dados: DadosEdicaoAtendimento,
+): Promise<Atendimento> {
+  return apiCliente.patch<Atendimento>(`/atendimentos/${atendimentoId}`, dados);
+}

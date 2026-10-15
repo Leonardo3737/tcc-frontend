@@ -214,6 +214,20 @@ export function podeAvaliar(atendimento: Atendimento, inscricao: Inscricao | und
 }
 
 /**
+ * Editar assunto, local e vagas (PATCH /atendimentos/:id).
+ *
+ * Mesma regra de quem gere a sessao — `exigirMonitorOuProfessor` + status
+ * AGENDADO no service. Realizado e cancelado nao se editam: mudar o assunto
+ * depois reescreveria o que aconteceu (e o que foi avaliado).
+ */
+export function podeEditarAtendimento(
+  atendimento: Atendimento,
+  contexto: ContextoMonitoria,
+): boolean {
+  return podeGerirAtendimento(atendimento, contexto);
+}
+
+/**
  * Registrar realizacao: quem gere a sessao, e so depois do inicio — o backend
  * recusa marcar como realizado um atendimento futuro.
  */

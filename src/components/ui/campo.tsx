@@ -60,7 +60,7 @@ function EnvelopeCampo({
     // `space-y-1.5` separa rotulo, controle e mensagem. Sem isto os tres ficam
     // colados e o campo parece um bloco unico — o texto de ajuda, em especial,
     // se confunde com o valor digitado.
-    <div className={cn('space-y-1.5', className)}>
+    <div className={cn(className)}>
       <label htmlFor={idControle} className="block text-sm font-semibold text-texto">
         {label}
         {obrigatorio && (

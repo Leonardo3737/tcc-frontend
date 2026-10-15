@@ -1,33 +1,33 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, FolderOpen, LogOut, Pencil, UserPlus, Users } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardCabecalho, CardConteudo } from '@/components/ui/card';
-import { Input, Textarea } from '@/components/ui/campo';
-import { Alert } from '@/components/ui/alert';
-import { toast } from '@/components/ui/toast';
 import { DialogoConfirmacao } from '@/components/comum/confirmacao';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input, Textarea } from '@/components/ui/campo';
+import { Card, CardCabecalho, CardConteudo } from '@/components/ui/card';
+import { toast } from '@/components/ui/toast';
+import { rotas } from '@/config/rotas';
+import { mensagemDeErro } from '@/lib/api/erros';
+import { aplicarErroDeFormulario } from '@/lib/api/formulario';
+import { podeParticiparDaMonitoria } from '@/lib/autorizacao/capacidades';
+import { chaves } from '@/lib/query/chaves';
+import { useContextoMonitoria } from '@/providers/monitoria-provider';
+import { useSessao } from '@/providers/sessao-provider';
+import { PapelMonitoria, StatusMonitoria } from '@/types/dominio';
 import {
   atualizarMonitoria,
   encerrarParticipacao,
   participarDaMonitoria,
 } from '../api/monitorias.service';
-import { useContextoMonitoria } from '@/providers/monitoria-provider';
-import { useSessao } from '@/providers/sessao-provider';
-import { aplicarErroDeFormulario } from '@/lib/api/formulario';
-import { podeParticiparDaMonitoria } from '@/lib/autorizacao/capacidades';
-import { mensagemDeErro } from '@/lib/api/erros';
-import { chaves } from '@/lib/query/chaves';
-import { rotas } from '@/config/rotas';
-import { PapelMonitoria, StatusMonitoria } from '@/types/dominio';
 
 export function VisaoGeralMonitoria() {
   const { monitoria, contexto, capacidades } = useContextoMonitoria();
@@ -238,7 +238,7 @@ function CartaoParticipacao() {
                 titulo="Sair da monitoria"
                 descricao="Você perderá o acesso aos atendimentos, materiais e participantes desta monitoria."
                 rotuloConfirmar="Sair"
-                aviso="Seu histórico é preservado (RN10). Se você tiver atendimentos agendados ou inscrições ativas, cancele-os antes — o backend recusará a saída."
+                aviso="Seu histórico é preservado (RN10). Se você tiver atendimentos agendados ou inscrições ativas, cancele-os antes — o sistema recusará a saída."
               />
             </>
           )}
