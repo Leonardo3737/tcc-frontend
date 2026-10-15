@@ -12,7 +12,7 @@ import { useSessao } from '@/providers/sessao-provider';
 import { chaves } from '@/lib/query/chaves';
 import { rotas } from '@/config/rotas';
 import { formatarIntervalo } from '@/lib/datas/fuso';
-import { chaveDia, rotuloDia } from '@/lib/datas/relativa';
+import { agruparPorDia, rotuloDia } from '@/lib/datas/relativa';
 import { cn } from '@/lib/utils';
 import { StatusAtendimento, type Atendimento } from '@/types/dominio';
 
@@ -176,15 +176,11 @@ function ListaOcupados({
 
   // Agrupado por dia de calendario no fuso da instituicao (AD-F04).
   const agora = new Date();
-  const grupos = new Map<string, Atendimento[]>();
-  for (const atendimento of atendimentos) {
-    const chave = chaveDia(atendimento.inicio, fuso);
-    grupos.set(chave, [...(grupos.get(chave) ?? []), atendimento]);
-  }
+  const grupos = agruparPorDia(atendimentos, fuso);
 
   return (
     <div className="space-y-3">
-      {[...grupos.entries()].map(([chave, doDia]) => (
+      {grupos.map(({ chave, itens: doDia }) => (
         <section key={chave} aria-label={rotuloDia(doDia[0]!.inicio, agora, fuso)}>
           <h3 className="text-xs font-semibold text-texto-suave">
             {rotuloDia(doDia[0]!.inicio, agora, fuso)}

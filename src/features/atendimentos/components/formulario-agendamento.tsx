@@ -1,41 +1,41 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { z } from 'zod';
 import { CalendarPlus, Clock, Info } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { z } from 'zod';
 
 import { SemAcesso } from '@/components/autorizacao/sem-acesso';
-import { Button } from '@/components/ui/button';
-import { Card, CardCabecalho, CardConteudo } from '@/components/ui/card';
-import { Input, Select, Textarea } from '@/components/ui/campo';
 import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input, Select, Textarea } from '@/components/ui/campo';
+import { Card, CardCabecalho, CardConteudo } from '@/components/ui/card';
 import { Carregando } from '@/components/ui/estados';
 import { toast } from '@/components/ui/toast';
-import { agendarAtendimento } from '../api/atendimentos.service';
-import { HorariosOcupados } from './horarios-ocupados';
-import { listarParticipantes } from '@/features/monitorias/api/monitorias.service';
-import { listarDisponibilidades } from '@/features/disponibilidades/api/disponibilidades.service';
-import { useContextoMonitoria } from '@/providers/monitoria-provider';
-import { useSessao } from '@/providers/sessao-provider';
-import { aplicarErroDeFormulario } from '@/lib/api/formulario';
-import { chaves } from '@/lib/query/chaves';
 import { rotas } from '@/config/rotas';
+import { listarDisponibilidades } from '@/features/disponibilidades/api/disponibilidades.service';
+import { listarParticipantes } from '@/features/monitorias/api/monitorias.service';
+import { aplicarErroDeFormulario } from '@/lib/api/formulario';
 import {
   formatarDataHoraExtensa,
   formatarHoraSimples,
   instanteDeDataHoraLocal,
   nomeDoDiaSemana,
 } from '@/lib/datas/fuso';
+import { chaves } from '@/lib/query/chaves';
+import { useContextoMonitoria } from '@/providers/monitoria-provider';
+import { useSessao } from '@/providers/sessao-provider';
 import {
   ModalidadeAtendimento,
   PapelMonitoria,
   StatusMonitoria,
   StatusParticipacao,
 } from '@/types/dominio';
+import { agendarAtendimento } from '../api/atendimentos.service';
+import { HorariosOcupados } from './horarios-ocupados';
 
 const CAMPOS = [
   'monitorParticipanteId',
@@ -473,7 +473,7 @@ function ConteudoFormularioAgendamento() {
 
           {disponibilidades.isSuccess && disponibilidades.data.length === 0 && (
             <Alert tom="alerta">
-              Este monitor ainda não declarou horários. Sem uma faixa ativa, o backend recusa o
+              Este monitor ainda não declarou horários. Sem uma faixa ativa, o sistema recusa o
               agendamento.
             </Alert>
           )}

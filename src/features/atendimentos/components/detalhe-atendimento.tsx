@@ -6,6 +6,7 @@ import {
   CalendarClock,
   CheckCircle2,
   MapPin,
+  Pencil,
   Star,
   UserMinus,
   UserPlus,
@@ -29,6 +30,7 @@ import { mensagemDeErro } from '@/lib/api/erros';
 import {
   contextoDaMonitoria,
   podeDesistirDaInscricao,
+  podeEditarAtendimento,
   podeGerirAtendimento,
   podeRegistrarRealizacao,
   podeSeInscreverEmAtendimento,
@@ -48,6 +50,7 @@ import {
   inscreverEmAtendimento,
 } from '../api/atendimentos.service';
 import { DialogoCancelar, DialogoReagendar, DialogoRealizar } from './dialogos-atendimento';
+import { DialogoEditarAtendimento } from './dialogo-editar-atendimento';
 import { Avaliacoes, HistoricoAtendimento, ListaInscricoes } from './secoes-atendimento';
 
 /**
@@ -72,6 +75,7 @@ export function DetalheAtendimento({ atendimentoId }: { atendimentoId: string })
   const [dialogoCancelar, setDialogoCancelar] = useState(false);
   const [dialogoReagendar, setDialogoReagendar] = useState(false);
   const [dialogoRealizar, setDialogoRealizar] = useState(false);
+  const [dialogoEditar, setDialogoEditar] = useState(false);
   const [dialogoAvaliar, setDialogoAvaliar] = useState(false);
   const [confirmandoDesistencia, setConfirmandoDesistencia] = useState(false);
 
@@ -135,6 +139,7 @@ export function DetalheAtendimento({ atendimentoId }: { atendimentoId: string })
   const podeDesistir = podeDesistirDaInscricao(atendimento);
   const podeGerir = contexto ? podeGerirAtendimento(atendimento, contexto) : false;
   const podeRealizar = contexto ? podeRegistrarRealizacao(atendimento, contexto) : false;
+  const podeEditar = contexto ? podeEditarAtendimento(atendimento, contexto) : false;
   const souSolicitante =
     atendimento.origem === OrigemAtendimento.SOLICITACAO_ALUNO && Boolean(minhaInscricao);
   const algumaAcao =
@@ -320,6 +325,17 @@ export function DetalheAtendimento({ atendimentoId }: { atendimentoId: string })
                     )
                   )}
 
+                  {podeEditar && (
+                    <Button
+                      variante="secundaria"
+                      className="w-full"
+                      onClick={() => setDialogoEditar(true)}
+                      iconeEsquerda={<Pencil className="h-4 w-4" aria-hidden />}
+                    >
+                      Editar dados
+                    </Button>
+                  )}
+
                   <Button
                     variante="secundaria"
                     className="w-full"
@@ -391,6 +407,13 @@ export function DetalheAtendimento({ atendimentoId }: { atendimentoId: string })
         aoConcluir={invalidar}
         atendimento={atendimento}
         fuso={fuso}
+      />
+
+      <DialogoEditarAtendimento
+        aberto={dialogoEditar}
+        aoFechar={() => setDialogoEditar(false)}
+        aoConcluir={invalidar}
+        atendimento={atendimento}
       />
 
       <DialogoRealizar

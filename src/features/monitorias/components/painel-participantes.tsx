@@ -1,27 +1,27 @@
 'use client';
 
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LogOut, UserPlus, Users } from 'lucide-react';
+import { useState } from 'react';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardConteudo } from '@/components/ui/card';
-import { Select } from '@/components/ui/campo';
-import { BadgePapel, BadgeStatusParticipacao } from '@/components/ui/badge';
+import { DialogoConfirmacao, useConfirmacao } from '@/components/comum/confirmacao';
+import { Paginacao } from '@/components/comum/paginacao';
 import { Alert } from '@/components/ui/alert';
+import { BadgePapel, BadgeStatusParticipacao } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/campo';
+import { Card, CardConteudo } from '@/components/ui/card';
 import { EstadoErro, EstadoVazio } from '@/components/ui/estados';
 import { SkeletonLista } from '@/components/ui/skeleton';
-import { Paginacao } from '@/components/comum/paginacao';
-import { DialogoConfirmacao, useConfirmacao } from '@/components/comum/confirmacao';
 import { toast } from '@/components/ui/toast';
-import { DialogoAdicionarParticipante } from './dialogo-adicionar-participante';
-import { encerrarParticipacao, listarParticipantes } from '../api/monitorias.service';
-import { useContextoMonitoria } from '@/providers/monitoria-provider';
 import { useFiltrosUrl } from '@/hooks/use-filtros-url';
 import { mensagemDeErro } from '@/lib/api/erros';
 import { chaves } from '@/lib/query/chaves';
 import { iniciais } from '@/lib/utils';
+import { useContextoMonitoria } from '@/providers/monitoria-provider';
 import { PapelMonitoria, StatusParticipacao, type Participante } from '@/types/dominio';
+import { encerrarParticipacao, listarParticipantes } from '../api/monitorias.service';
+import { DialogoAdicionarParticipante } from './dialogo-adicionar-participante';
 
 /**
  * Participantes da monitoria.
@@ -186,7 +186,7 @@ export function PainelParticipantes() {
         titulo="Encerrar participação"
         descricao={`${confirmacaoEncerrar.alvo?.nomeAluno ?? 'O aluno'} perderá o acesso a esta monitoria.`}
         rotuloConfirmar="Encerrar vínculo"
-        aviso="O vínculo não é apagado (RN10): ele vira histórico e continua sendo o sujeito dos atendimentos já registrados. Se houver atendimentos agendados ou inscrições ativas, o backend recusará."
+        aviso="O vínculo não é apagado (RN10): ele vira histórico e continua sendo o sujeito dos atendimentos já registrados. Se houver atendimentos agendados ou inscrições ativas, o sistema recusará."
       />
 
       <DialogoAdicionarParticipante

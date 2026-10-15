@@ -6,10 +6,8 @@ import { CalendarDays } from 'lucide-react';
 import { Select } from '@/components/ui/campo';
 import { Alert } from '@/components/ui/alert';
 import { EstadoErro, EstadoVazio } from '@/components/ui/estados';
-import { SkeletonLista } from '@/components/ui/skeleton';
-import { SkeletonCartaoAtendimento } from './cartao-atendimento';
 import { Paginacao } from '@/components/comum/paginacao';
-import { CartaoAtendimento } from './cartao-atendimento';
+import { AgendaPorDia, SkeletonAgendaPorDia } from './agenda-por-dia';
 import { listarMeusAtendimentos } from '../api/atendimentos.service';
 import { useSessao } from '@/providers/sessao-provider';
 import { useFiltrosUrl } from '@/hooks/use-filtros-url';
@@ -76,7 +74,7 @@ export function PainelMeusAtendimentos() {
         ]}
       />
 
-      {consulta.isPending && <SkeletonLista itens={3} item={SkeletonCartaoAtendimento} />}
+      {consulta.isPending && <SkeletonAgendaPorDia />}
 
       {consulta.isError && (
         <EstadoErro erro={consulta.error} aoTentarNovamente={() => void consulta.refetch()} />
@@ -96,11 +94,7 @@ export function PainelMeusAtendimentos() {
 
       {consulta.isSuccess && consulta.data.dados.length > 0 && (
         <>
-          <div className="grid gap-3 lg:grid-cols-2">
-            {consulta.data.dados.map((atendimento) => (
-              <CartaoAtendimento key={atendimento.id} atendimento={atendimento} fuso={fuso} />
-            ))}
-          </div>
+          <AgendaPorDia atendimentos={consulta.data.dados} fuso={fuso} />
 
           <Paginacao
             meta={consulta.data.meta}
