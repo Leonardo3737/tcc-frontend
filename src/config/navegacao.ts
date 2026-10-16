@@ -3,6 +3,7 @@ import {
   CalendarDays,
   GraduationCap,
   LayoutDashboard,
+  Library,
   Trophy,
   Users,
   type LucideIcon,
@@ -67,6 +68,14 @@ export const ITENS_NAVEGACAO: ItemNavegacao[] = [
     icone: CalendarDays,
     casaPrefixo: true,
     grupo: 'rotina',
+  },
+  {
+    rotulo: 'Cursos',
+    href: rotas.cursos,
+    icone: Library,
+    // Só PROFESSOR cria e edita o catálogo (backend: @Perfis(PROFESSOR)).
+    perfis: [PerfilUsuario.PROFESSOR],
+    grupo: 'gestao',
   },
   {
     rotulo: 'Disciplinas',

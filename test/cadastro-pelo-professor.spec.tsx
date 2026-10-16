@@ -30,6 +30,44 @@ afterEach(() => vi.unstubAllGlobals());
 
 const PROFESSOR = usuarioTeste([PerfilUsuario.PROFESSOR], { id: 'prof-1', nome: 'Joao Ribeiro' });
 
+const CURSO = {
+  id: '11111111-1111-4111-8111-111111111111',
+  codigo: 'ENG001',
+  nome: 'Engenharia de Software',
+  ativo: true,
+};
+
+const PAGINA_DE_CURSOS = {
+  dados: [CURSO],
+  meta: { total: 1, pagina: 1, limite: 100, totalPaginas: 1 },
+};
+
+/**
+ * O dialogo de aluno faz DUAS requisicoes: busca os cursos para montar o campo
+ * de escolha e so entao cria a conta. O stub roteia por URL para que o teste
+ * continue falando apenas do POST que lhe interessa.
+ */
+function stubFetch(respostaDoCadastro: Response | (() => Response)) {
+  const espiao = vi.fn((url: string) => {
+    if (String(url).includes('/cursos')) return Promise.resolve(json(PAGINA_DE_CURSOS));
+
+    return Promise.resolve(
+      typeof respostaDoCadastro === 'function' ? respostaDoCadastro() : respostaDoCadastro,
+    );
+  });
+
+  vi.stubGlobal('fetch', espiao);
+  return espiao;
+}
+
+/** O POST do cadastro, entre as chamadas do stub. */
+function chamadaDeCadastro(espiao: ReturnType<typeof stubFetch>) {
+  return espiao.mock.calls.find(([url]) => !String(url).includes('/cursos')) as unknown as [
+    string,
+    RequestInit,
+  ];
+}
+
 /**
  * Cadastro de usuarios pelo professor.
  *
@@ -71,12 +109,29 @@ describe('schema', () => {
       nome: 'Bruno Costa',
       email: 'bruno@ufx.edu.br',
       matricula: '2022.004-567',
+      cursoId: CURSO.id,
     };
     expect(esquemaCadastroAluno.safeParse(base).success).toBe(true);
     expect(esquemaCadastroAluno.safeParse({ ...base, matricula: 'ab' }).success).toBe(false);
     expect(esquemaCadastroAluno.safeParse({ ...base, matricula: 'com espaço' }).success).toBe(
       false,
     );
+  });
+
+  /**
+   * `curso` era texto livre e virou relacao. O campo e obrigatorio: e ele que
+   * decide de quais monitorias o aluno podera participar, e a coluna do backend
+   * nao aceita nulo.
+   */
+  it('exige cursoId, e um UUID — nao mais o nome do curso digitado', () => {
+    const base = { nome: 'Bruno Costa', email: 'bruno@ufx.edu.br', matricula: '2022004567' };
+
+    expect(esquemaCadastroAluno.safeParse(base).success).toBe(false);
+    expect(
+      esquemaCadastroAluno.safeParse({ ...base, cursoId: 'Engenharia de Software' }).success,
+    ).toBe(false);
+    expect(esquemaCadastroAluno.safeParse({ ...base, cursoId: CURSO.id }).success).toBe(true);
+    expect(Object.keys(esquemaCadastroAluno.shape)).not.toContain('curso');
   });
 
   it('nao tem campo de senha: o servidor gera e envia por e-mail', () => {
@@ -98,11 +153,14 @@ describe('dialogo de cadastro de aluno', () => {
     await usuario.type(screen.getByLabelText(/nome completo/i), 'Bruno Costa');
     await usuario.type(screen.getByLabelText(/e-mail/i), 'Bruno.Costa@ufx.edu.br');
     await usuario.type(screen.getByLabelText(/matr[ií]cula/i), '2022004567');
+
+    // A lista chega por requisicao; o campo so existe depois dela.
+    await usuario.selectOptions(await screen.findByLabelText(/^curso/i), CURSO.id);
   }
 
   it('envia so os campos do DTO e mostra os dados de acesso com a orientacao', async () => {
     const usuario = userEvent.setup();
-    const espiao = vi.fn().mockResolvedValue(
+    const espiao = stubFetch(() =>
       json(
         {
           id: 'u-novo',
@@ -116,7 +174,6 @@ describe('dialogo de cadastro de aluno', () => {
         201,
       ),
     );
-    vi.stubGlobal('fetch', espiao);
     const aoCadastrar = vi.fn();
 
     renderizar(
@@ -127,16 +184,18 @@ describe('dialogo de cadastro de aluno', () => {
     await preencher(usuario);
     await usuario.click(screen.getByRole('button', { name: /^cadastrar aluno$/i }));
 
-    await waitFor(() => expect(espiao).toHaveBeenCalled());
-    const [url, init] = espiao.mock.calls[0] as [string, RequestInit];
+    await waitFor(() => expect(chamadaDeCadastro(espiao)).toBeDefined());
+    const [url, init] = chamadaDeCadastro(espiao);
     expect(url).toBe('/api/backend/alunos');
     expect(init.method).toBe('POST');
 
-    // forbidNonWhitelisted: curso vazio fica de fora; e-mail vai normalizado.
+    // `cursoId`, nao `curso`: o antigo texto livre hoje daria 400
+    // (forbidNonWhitelisted). O e-mail vai normalizado.
     expect(JSON.parse(String(init.body))).toEqual({
       nome: 'Bruno Costa',
       email: 'bruno.costa@ufx.edu.br',
       matricula: '2022004567',
+      cursoId: CURSO.id,
     });
 
     expect(await screen.findByText('Conta criada')).toBeInTheDocument();
@@ -149,22 +208,17 @@ describe('dialogo de cadastro de aluno', () => {
     const usuario = userEvent.setup();
     const mensagem =
       'Nao foi possivel enviar a senha para o e-mail informado. A conta NAO foi criada; confira o endereco e tente novamente.';
-    vi.stubGlobal(
-      'fetch',
-      vi
-        .fn()
-        .mockResolvedValue(
-          json(
-            {
-              statusCode: 503,
-              erro: 'Service Unavailable',
-              mensagem,
-              caminho: '/api/alunos',
-              timestamp: '2026-10-13T12:00:00.000Z',
-            },
-            503,
-          ),
-        ),
+    stubFetch(() =>
+      json(
+        {
+          statusCode: 503,
+          erro: 'Service Unavailable',
+          mensagem,
+          caminho: '/api/alunos',
+          timestamp: '2026-10-13T12:00:00.000Z',
+        },
+        503,
+      ),
     );
 
     renderizar(<DialogoCadastrarUsuario tipo="aluno" aberto aoFechar={vi.fn()} />, {
@@ -183,19 +237,16 @@ describe('dialogo de cadastro de aluno', () => {
 
   it('409 de matricula repetida aparece no campo de matricula', async () => {
     const usuario = userEvent.setup();
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        json(
-          {
-            statusCode: 409,
-            erro: 'Conflict',
-            mensagem: 'Ja existe um aluno cadastrado com esta matricula.',
-            caminho: '/api/alunos',
-            timestamp: '2026-10-13T12:00:00.000Z',
-          },
-          409,
-        ),
+    stubFetch(() =>
+      json(
+        {
+          statusCode: 409,
+          erro: 'Conflict',
+          mensagem: 'Ja existe um aluno cadastrado com esta matricula.',
+          caminho: '/api/alunos',
+          timestamp: '2026-10-13T12:00:00.000Z',
+        },
+        409,
       ),
     );
 

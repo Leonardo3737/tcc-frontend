@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/campo';
 import { Alert } from '@/components/ui/alert';
 import { toast } from '@/components/ui/toast';
+import { SeletorDeCurso } from '@/features/cursos/components/seletor-de-cursos';
 import { cadastrarAluno } from '../api/alunos.service';
 import { cadastrarProfessor } from '../api/professores.service';
 import {
@@ -149,12 +150,14 @@ function FormularioAluno({
     register,
     handleSubmit,
     setError,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<DadosCadastroAluno>({
     resolver: zodResolver(esquemaCadastroAluno),
     mode: 'onBlur',
     reValidateMode: 'onChange',
-    defaultValues: { nome: '', email: '', matricula: '', curso: '' },
+    defaultValues: { nome: '', email: '', matricula: '', cursoId: '' },
   });
 
   const mutacao = useMutation({
@@ -198,23 +201,27 @@ function FormularioAluno({
         {...register('email')}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Input
-          label="Matrícula"
-          autoComplete="off"
-          obrigatorio
-          ajuda="Letras, números, ponto, hífen ou _."
-          erro={errors.matricula?.message}
-          {...register('matricula')}
-        />
+      <Input
+        label="Matrícula"
+        autoComplete="off"
+        obrigatorio
+        ajuda="Letras, números, ponto, hífen ou _."
+        erro={errors.matricula?.message}
+        {...register('matricula')}
+      />
 
-        <Input
-          label="Curso"
-          autoComplete="off"
-          erro={errors.curso?.message}
-          {...register('curso')}
-        />
-      </div>
+      {/*
+        Escolha, não texto livre: o curso virou relação e é ele que decide de
+        quais monitorias o aluno poderá participar. Digitado à mão, "Eng. de
+        Software" e "Engenharia de Software" viravam cursos diferentes.
+      */}
+      <SeletorDeCurso
+        obrigatorio
+        valor={watch('cursoId')}
+        aoMudar={(cursoId) => setValue('cursoId', cursoId, { shouldValidate: true })}
+        erro={errors.cursoId?.message}
+        ajuda="Define de quais monitorias o aluno poderá participar."
+      />
 
       <RodapeFormulario enviando={enviando} aoCancelar={aoCancelar} rotulo="Cadastrar aluno" />
     </form>

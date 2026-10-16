@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/campo';
 import { Alert } from '@/components/ui/alert';
 import { toast } from '@/components/ui/toast';
+import { SeletorDeCurso } from '@/features/cursos/components/seletor-de-cursos';
 import {
   atualizarDadosAluno,
   atualizarDadosProfessor,
@@ -21,7 +22,7 @@ import { ApiError } from '@/lib/api/erros';
 
 /**
  * Espelha os tres DTOs de atualizacao do backend:
- * `atualizar-usuario` (nome), `atualizar-aluno` (curso) e
+ * `atualizar-usuario` (nome), `atualizar-aluno` (cursoId) e
  * `atualizar-professor` (departamento).
  *
  * E-mail e matricula/identificacao funcional NAO estao aqui porque o backend
@@ -34,7 +35,11 @@ const esquema = z.object({
     .trim()
     .min(3, 'O nome deve ter ao menos 3 caracteres')
     .max(150, 'O nome deve ter no máximo 150 caracteres'),
-  curso: z.string().trim().max(120, 'O curso deve ter no máximo 120 caracteres').optional(),
+  /**
+   * `cursoId`, nao mais `curso` em texto livre. Vazio = nao mexer: o backend
+   * nao aceita nulo, entao nao existe "remover o curso".
+   */
+  cursoId: z.string().optional(),
   departamento: z
     .string()
     .trim()
@@ -52,13 +57,15 @@ export function FormularioPerfil() {
     register,
     handleSubmit,
     setError,
+    setValue,
+    watch,
     formState: { errors, isSubmitting, dirtyFields },
   } = useForm<DadosPerfil>({
     resolver: zodResolver(esquema),
     mode: 'onBlur',
     defaultValues: {
       nome: usuario.nome,
-      curso: usuario.aluno?.curso ?? '',
+      cursoId: usuario.aluno?.cursoId ?? '',
       departamento: usuario.professor?.departamento ?? '',
     },
   });
@@ -75,8 +82,14 @@ export function FormularioPerfil() {
         await atualizarNome(dados.nome);
       }
 
-      if (ehAluno && dirtyFields.curso) {
-        await atualizarDadosAluno(dados.curso?.trim() ? dados.curso : null);
+      /**
+       * A troca so passa enquanto o aluno nao tiver participacao em monitoria:
+       * depois disso o backend recusa com 409, porque mudar o curso
+       * reescreveria vinculos que a RN10 preserva. A mensagem dele ja esta
+       * pronta para exibir e cai no topo do formulario.
+       */
+      if (ehAluno && dirtyFields.cursoId && dados.cursoId) {
+        await atualizarDadosAluno(dados.cursoId);
       }
 
       if (ehProfessor && dirtyFields.departamento) {
@@ -136,7 +149,21 @@ export function FormularioPerfil() {
             ajuda="Dado de identidade institucional."
           />
 
-          <Input label="Curso" erro={errors.curso?.message} {...register('curso')} />
+          <SeletorDeCurso
+            valor={watch('cursoId') ?? ''}
+            aoMudar={(cursoId) => setValue('cursoId', cursoId, { shouldDirty: true })}
+            erro={errors.cursoId?.message}
+            ajuda="Só pode ser trocado enquanto você não tiver participado de nenhuma monitoria."
+            cursoAtual={
+              usuario.aluno
+                ? {
+                    id: usuario.aluno.cursoId,
+                    codigo: '',
+                    nome: usuario.aluno.curso ?? 'Curso atual',
+                  }
+                : null
+            }
+          />
         </>
       )}
 

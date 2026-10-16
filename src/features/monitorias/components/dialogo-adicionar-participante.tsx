@@ -6,13 +6,16 @@ import { UserCheck, UserPlus, Users } from 'lucide-react';
 
 import { Dialog, DialogConteudo } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/campo';
 import { Alert } from '@/components/ui/alert';
 import { EstadoVazio } from '@/components/ui/estados';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CampoBusca } from '@/components/comum/campo-busca';
 import { toast } from '@/components/ui/toast';
 import { habilitarMonitor, inscreverMonitorado } from '../api/monitorias.service';
+import { detalharDisciplina } from '@/features/disciplinas/api/disciplinas.service';
 import { listarAlunos } from '@/features/usuarios/api/alunos.service';
+import { useContextoMonitoria } from '@/providers/monitoria-provider';
 import { mensagemDeErro } from '@/lib/api/erros';
 import { chaves } from '@/lib/query/chaves';
 import { PapelMonitoria } from '@/types/dominio';
@@ -40,18 +43,52 @@ export function DialogoAdicionarParticipante({
   monitoriaId: string;
 }) {
   const queryClient = useQueryClient();
+  const { monitoria } = useContextoMonitoria();
   const [busca, setBusca] = useState('');
+  const [cursoEscolhido, setCursoEscolhido] = useState('');
   const [erro, setErro] = useState<string | null>(null);
 
+  const disciplinaId = monitoria.disciplina?.id;
+
+  /**
+   * Cursos em que a disciplina desta monitoria é oferecida.
+   *
+   * São eles que definem quem pode participar: o backend recusa com 409 um
+   * aluno cujo curso não ofereça a disciplina. Sem este recorte, o professor
+   * buscaria um nome, clicaria e só então descobriria que aquela pessoa nunca
+   * poderia ser adicionada.
+   *
+   * `MonitoriaRespostaDto` não traz os cursos, então eles vêm da disciplina —
+   * uma requisição, enquanto o diálogo está aberto.
+   */
+  const disciplina = useQuery({
+    queryKey: chaves.disciplinas.detalhe(disciplinaId ?? ''),
+    enabled: aberto && Boolean(disciplinaId),
+    queryFn: () => detalharDisciplina(disciplinaId!),
+    staleTime: 5 * 60_000,
+  });
+
+  const cursosElegiveis = disciplina.data?.cursos ?? [];
+
+  /**
+   * `cursoId` do backend aceita UM curso, e a disciplina pode ter vários.
+   * Com mais de um, a escolha é explícita e o padrão é o primeiro — assim todo
+   * candidato listado é elegível, e trocar de curso revela os demais.
+   */
+  const cursoFiltrado = cursoEscolhido || cursosElegiveis[0]?.id;
+  const nomeDoCursoFiltrado = cursosElegiveis.find((curso) => curso.id === cursoFiltrado)?.nome;
+
   const alunos = useQuery({
-    queryKey: chaves.alunos.lista({ busca, monitoriaId }),
+    queryKey: chaves.alunos.lista({ busca, monitoriaId, cursoId: cursoFiltrado }),
     // Só busca depois de digitar algo: a base institucional inteira paginada
-    // às cegas não ajuda ninguém.
-    enabled: aberto && busca.trim().length >= 2,
+    // às cegas não ajuda ninguém. E só depois de saber o curso, senão a
+    // primeira lista mostraria candidatos que seriam recusados.
+    enabled: aberto && busca.trim().length >= 2 && !disciplina.isPending,
     queryFn: () =>
       listarAlunos({
         busca: busca.trim(),
         semVinculoAtivoNaMonitoria: monitoriaId,
+        ...(cursoFiltrado ? { cursoId: cursoFiltrado } : {}),
         limite: 10,
       }),
   });
@@ -89,6 +126,7 @@ export function DialogoAdicionarParticipante({
       onOpenChange={(estado) => {
         if (!estado) {
           setBusca('');
+          setCursoEscolhido('');
           setErro(null);
           aoFechar();
         }
@@ -101,6 +139,30 @@ export function DialogoAdicionarParticipante({
         >
           <div className="space-y-4">
             {erro && <Alert tom="erro">{erro}</Alert>}
+
+            {/*
+              Mais de um curso oferece a disciplina: a escolha fica explícita,
+              porque o filtro do backend aceita um curso por vez.
+            */}
+            {cursosElegiveis.length > 1 && (
+              <Select
+                label="Curso"
+                ajuda={`${monitoria.disciplina?.nome ?? 'Esta disciplina'} é oferecida em ${cursosElegiveis.length} cursos. Só alunos do curso escolhido podem participar.`}
+                value={cursoFiltrado ?? ''}
+                onChange={(evento) => setCursoEscolhido(evento.target.value)}
+                opcoes={cursosElegiveis.map((curso) => ({
+                  valor: curso.id,
+                  rotulo: `${curso.codigo} · ${curso.nome}`,
+                }))}
+              />
+            )}
+
+            {cursosElegiveis.length === 1 && (
+              <p className="text-xs text-texto-suave">
+                Mostrando apenas alunos de <strong>{cursosElegiveis[0]!.nome}</strong>, o único
+                curso que oferece esta disciplina.
+              </p>
+            )}
 
             <CampoBusca
               valorInicial=""
@@ -130,7 +192,11 @@ export function DialogoAdicionarParticipante({
             {alunos.isSuccess && !alunos.isFetching && alunos.data.dados.length === 0 && (
               <EstadoVazio
                 titulo="Nenhum aluno encontrado"
-                descricao={`Nada corresponde a “${busca}”, ou o aluno já participa desta monitoria.`}
+                descricao={
+                  nomeDoCursoFiltrado
+                    ? `Nada corresponde a “${busca}” entre os alunos de ${nomeDoCursoFiltrado}. A pessoa pode já participar desta monitoria${cursosElegiveis.length > 1 ? ', ou ser de outro dos cursos acima' : ''}.`
+                    : `Nada corresponde a “${busca}”, ou o aluno já participa desta monitoria.`
+                }
                 className="py-8"
               />
             )}

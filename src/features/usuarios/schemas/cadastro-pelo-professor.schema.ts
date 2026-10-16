@@ -35,7 +35,14 @@ export const esquemaCadastroAluno = z.object({
   nome,
   email,
   matricula: z.string().trim().regex(REGEX_IDENTIFICADOR, MENSAGEM_IDENTIFICADOR),
-  curso: z.string().trim().max(120, 'O curso deve ter no máximo 120 caracteres').optional(),
+  /**
+   * `cursoId`, nao mais `curso` em texto livre.
+   *
+   * E OBRIGATORIO: o curso decide de quais monitorias o aluno pode participar,
+   * e a coluna do backend nao aceita nulo. A mensagem fala do que a pessoa ve
+   * na tela — um campo de escolha —, nao de UUID.
+   */
+  cursoId: z.string().uuid('Escolha o curso do aluno'),
 });
 
 export type DadosCadastroAluno = z.infer<typeof esquemaCadastroAluno>;
@@ -58,7 +65,7 @@ export const esquemaCadastroProfessor = z.object({
 
 export type DadosCadastroProfessor = z.infer<typeof esquemaCadastroProfessor>;
 
-export const CAMPOS_CADASTRO_ALUNO = ['nome', 'email', 'matricula', 'curso'] as const;
+export const CAMPOS_CADASTRO_ALUNO = ['nome', 'email', 'matricula', 'cursoId'] as const;
 
 export const CAMPOS_CADASTRO_PROFESSOR = [
   'nome',

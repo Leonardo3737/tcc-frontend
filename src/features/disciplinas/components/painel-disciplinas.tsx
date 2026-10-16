@@ -20,11 +20,12 @@ import { EstadoErro, EstadoVazio } from '@/components/ui/estados';
 import { SkeletonLista } from '@/components/ui/skeleton';
 import { CampoBusca } from '@/components/comum/campo-busca';
 import { Paginacao } from '@/components/comum/paginacao';
+import { FiltroDeCurso } from '@/features/cursos/components/seletor-de-cursos';
 import { DialogoDisciplina } from './dialogo-disciplina';
 import { listarDisciplinas } from '../api/disciplinas.service';
 import { useFiltrosUrl } from '@/hooks/use-filtros-url';
 import { chaves } from '@/lib/query/chaves';
-import type { Disciplina } from '@/types/dominio';
+import type { Disciplina, ResumoCurso } from '@/types/dominio';
 
 /**
  * Lista do catalogo.
@@ -40,11 +41,13 @@ export function PainelDisciplinas() {
 
   const busca = obter('busca');
   const situacao = obter('situacao');
+  const cursoId = obter('curso');
   const pagina = obterNumero('pagina', 1);
 
   const filtro = {
     busca: busca || undefined,
     ativa: situacao === '' ? undefined : situacao === 'ativas',
+    cursoId: cursoId || undefined,
     pagina,
     limite: 20,
   };
@@ -77,11 +80,19 @@ export function PainelDisciplinas() {
           className="flex-1"
         />
 
+        {/* Trocar de curso reinicia a paginação: a página 3 do recorte
+            anterior quase nunca existe no novo. */}
+        <FiltroDeCurso
+          className="sm:w-52"
+          valor={cursoId}
+          aoMudar={(novo) => definir({ curso: novo, pagina: undefined })}
+        />
+
         <Select
           label="Situação"
           className="sm:w-44 [&>label]:sr-only"
           value={situacao}
-          onChange={(evento) => definir({ situacao: evento.target.value })}
+          onChange={(evento) => definir({ situacao: evento.target.value, pagina: undefined })}
           opcoes={[
             { valor: '', rotulo: 'Todas' },
             { valor: 'ativas', rotulo: 'Somente ativas' },
@@ -103,14 +114,18 @@ export function PainelDisciplinas() {
       {consulta.isSuccess && consulta.data.dados.length === 0 && (
         <EstadoVazio
           icone={<BookOpen className="h-8 w-8" aria-hidden />}
-          titulo={busca ? 'Nenhuma disciplina encontrada' : 'Catálogo vazio'}
+          titulo={
+            busca || cursoId ? 'Nenhuma disciplina encontrada' : 'Catálogo vazio'
+          }
           descricao={
             busca
               ? `Nada corresponde a “${busca}”. Tente outro código ou nome.`
-              : 'Cadastre a primeira disciplina para poder criar monitorias.'
+              : cursoId
+                ? 'Nenhuma disciplina é oferecida neste curso. Vincule o curso a uma disciplina ao editá-la.'
+                : 'Cadastre a primeira disciplina para poder criar monitorias.'
           }
           acao={
-            !busca && (
+            !busca && !cursoId && (
               <Button
                 onClick={abrirCriacao}
                 iconeEsquerda={<Plus className="h-4 w-4" aria-hidden />}
@@ -131,6 +146,7 @@ export function PainelDisciplinas() {
                 <TabelaLinha>
                   <TabelaCabecalhoCelula>Código</TabelaCabecalhoCelula>
                   <TabelaCabecalhoCelula>Nome</TabelaCabecalhoCelula>
+                  <TabelaCabecalhoCelula>Cursos</TabelaCabecalhoCelula>
                   <TabelaCabecalhoCelula>Situação</TabelaCabecalhoCelula>
                   <TabelaCabecalhoCelula className="text-right">Ações</TabelaCabecalhoCelula>
                 </TabelaLinha>
@@ -143,6 +159,9 @@ export function PainelDisciplinas() {
                       {disciplina.codigo}
                     </TabelaCelula>
                     <TabelaCelula>{disciplina.nome}</TabelaCelula>
+                    <TabelaCelula>
+                      <ListaDeCursos cursos={disciplina.cursos} />
+                    </TabelaCelula>
                     <TabelaCelula>
                       <Badge tom={disciplina.ativa ? 'sucesso' : 'neutro'}>
                         {disciplina.ativa ? 'Ativa' : 'Inativa'}
@@ -171,6 +190,7 @@ export function PainelDisciplinas() {
                 <div className="min-w-0 space-y-1">
                   <p className="font-mono text-xs text-texto-suave">{disciplina.codigo}</p>
                   <p className="font-medium text-texto">{disciplina.nome}</p>
+                  <ListaDeCursos cursos={disciplina.cursos} />
                   <Badge tom={disciplina.ativa ? 'sucesso' : 'neutro'}>
                     {disciplina.ativa ? 'Ativa' : 'Inativa'}
                   </Badge>
@@ -204,5 +224,30 @@ export function PainelDisciplinas() {
         disciplina={emEdicao}
       />
     </div>
+  );
+}
+
+/**
+ * Cursos que oferecem a disciplina.
+ *
+ * Uma lista vazia NAO significa "sem curso" — ter ao menos um e obrigatorio no
+ * backend. Significa que a relacao nao veio carregada na consulta, e o texto
+ * diz exatamente isso em vez de afirmar uma ausencia que seria falsa.
+ */
+function ListaDeCursos({ cursos }: { cursos: ResumoCurso[] }) {
+  if (cursos.length === 0) {
+    return <span className="text-xs text-texto-suave">—</span>;
+  }
+
+  // Na célula cabe o código; o nome vai no `title` do item, porque "SIS001"
+  // não diz nada a quem não decora os códigos do catálogo.
+  return (
+    <ul className="flex flex-wrap gap-1">
+      {cursos.map((curso) => (
+        <li key={curso.id} title={curso.nome}>
+          <Badge tom="neutro">{curso.codigo}</Badge>
+        </li>
+      ))}
+    </ul>
   );
 }

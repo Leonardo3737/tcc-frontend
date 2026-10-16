@@ -13,6 +13,14 @@ import type { DadosCadastroAluno } from '../schemas/cadastro-pelo-professor.sche
 export interface FiltroAlunos {
   busca?: string;
   semVinculoAtivoNaMonitoria?: string;
+  /**
+   * Apenas alunos deste curso.
+   *
+   * No fluxo da RN01 isso deixa de ser conveniencia: como um aluno so participa
+   * de monitorias de disciplinas do proprio curso, sem o recorte a lista
+   * oferece candidatos que o backend vai recusar com 409.
+   */
+  cursoId?: string;
   pagina?: number;
   limite?: number;
 }
@@ -32,6 +40,12 @@ export function cadastrarAluno(dados: DadosCadastroAluno): Promise<Usuario> {
     nome: dados.nome,
     email: dados.email,
     matricula: dados.matricula,
-    ...(dados.curso ? { curso: dados.curso } : {}),
+    /**
+     * `cursoId`, nao `curso`: o campo deixou de ser texto livre e virou relacao.
+     * E OBRIGATORIO — e o curso que decide de quais monitorias o aluno pode
+     * participar, e a coluna nao aceita nulo. Mandar o antigo `curso` hoje
+     * devolve 400 pelo `forbidNonWhitelisted`.
+     */
+    cursoId: dados.cursoId,
   });
 }

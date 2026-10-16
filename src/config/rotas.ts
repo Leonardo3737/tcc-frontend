@@ -23,6 +23,7 @@ export const rotas = {
   monitoriaIndicadores: (id: string) => `/monitorias/${id}/indicadores`,
   atendimentos: '/atendimentos',
   atendimento: (id: string) => `/atendimentos/${id}`,
+  cursos: '/cursos',
   disciplinas: '/disciplinas',
   pessoas: '/pessoas',
   ranking: '/ranking',

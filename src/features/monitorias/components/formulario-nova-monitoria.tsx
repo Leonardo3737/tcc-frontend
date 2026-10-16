@@ -17,6 +17,7 @@ import { listarDisciplinas } from '@/features/disciplinas/api/disciplinas.servic
 import { aplicarErroDeFormulario } from '@/lib/api/formulario';
 import { chaves } from '@/lib/query/chaves';
 import { rotas } from '@/config/rotas';
+import type { Disciplina } from '@/types/dominio';
 
 /** Espelha criar-monitoria.dto.ts. */
 const esquema = z
@@ -52,6 +53,7 @@ export function FormularioNovaMonitoria() {
     register,
     handleSubmit,
     setError,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<DadosNovaMonitoria>({
     resolver: zodResolver(esquema),
@@ -136,6 +138,12 @@ export function FormularioNovaMonitoria() {
         {...register('disciplinaId')}
       />
 
+      <CursosDaDisciplina
+        disciplina={(disciplinas.data?.dados ?? []).find(
+          (item) => item.id === watch('disciplinaId'),
+        )}
+      />
+
       <div className="grid gap-4 sm:grid-cols-2">
         <Input
           label="Ano"
@@ -203,5 +211,27 @@ export function FormularioNovaMonitoria() {
         </Button>
       </div>
     </form>
+  );
+}
+
+/**
+ * Quem vai poder participar desta monitoria.
+ *
+ * Um aluno so participa de monitoria de disciplina do proprio curso — a regra e
+ * garantida por FK composta no banco e recusada com 409 na hora de adicionar o
+ * participante. Dizer isso AQUI, na escolha da disciplina, evita que o
+ * professor descubra o recorte semanas depois, ao tentar habilitar um monitor.
+ *
+ * Os cursos ja vem na propria listagem de disciplinas; nao ha requisicao extra.
+ */
+function CursosDaDisciplina({ disciplina }: { disciplina?: Disciplina }) {
+  if (!disciplina || disciplina.cursos.length === 0) return null;
+
+  return (
+    <p className="-mt-3 text-xs text-texto-suave">
+      Poderão participar alunos de{' '}
+      <strong>{disciplina.cursos.map((curso) => curso.nome).join(', ')}</strong> — os cursos que
+      oferecem esta disciplina.
+    </p>
   );
 }

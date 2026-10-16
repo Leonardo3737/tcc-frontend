@@ -11,6 +11,7 @@ import { EstadoErro, EstadoVazio } from '@/components/ui/estados';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CampoBusca } from '@/components/comum/campo-busca';
 import { Paginacao } from '@/components/comum/paginacao';
+import { FiltroDeCurso } from '@/features/cursos/components/seletor-de-cursos';
 import { DialogoCadastrarUsuario, type TipoCadastro } from './dialogo-cadastrar-usuario';
 import { listarAlunos } from '../api/alunos.service';
 import { listarProfessores } from '../api/professores.service';
@@ -46,7 +47,14 @@ export function PainelPessoas() {
       <Tabs
         value={aba}
         onValueChange={(nova) =>
-          definir({ aba: nova === 'alunos' ? undefined : nova, busca: undefined })
+          definir({
+            aba: nova === 'alunos' ? undefined : nova,
+            busca: undefined,
+            // `curso` só existe na aba de alunos; carregá-lo para a de
+            // professores deixaria um filtro invisível preso na URL.
+            curso: undefined,
+            pagina: undefined,
+          })
         }
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -68,6 +76,7 @@ export function PainelPessoas() {
       {aba === 'alunos' ? (
         <ListaAlunos
           busca={obter('busca')}
+          cursoId={obter('curso')}
           pagina={pagina}
           aoFiltrar={definir}
           carregandoUrl={pendente}
@@ -93,18 +102,25 @@ export function PainelPessoas() {
 
 function ListaAlunos({
   busca,
+  cursoId,
   pagina,
   aoFiltrar,
   carregandoUrl,
   aoCadastrar,
 }: {
   busca: string;
+  cursoId: string;
   pagina: number;
   aoFiltrar: Definir;
   carregandoUrl: boolean;
   aoCadastrar: () => void;
 }) {
-  const filtro = { busca: busca || undefined, pagina, limite: 20 };
+  const filtro = {
+    busca: busca || undefined,
+    cursoId: cursoId || undefined,
+    pagina,
+    limite: 20,
+  };
 
   const consulta = useQuery({
     queryKey: chaves.alunos.lista(filtro),
@@ -113,14 +129,25 @@ function ListaAlunos({
 
   return (
     <div className="space-y-3">
-      <CampoBusca
-        valorInicial={busca}
-        aoBuscar={(termo) => aoFiltrar({ busca: termo })}
-        placeholder="Buscar por nome, matrícula ou e-mail…"
-        rotulo="Buscar alunos"
-        carregando={carregandoUrl || consulta.isFetching}
-        className="sm:max-w-md"
-      />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <CampoBusca
+          valorInicial={busca}
+          aoBuscar={(termo) => aoFiltrar({ busca: termo })}
+          placeholder="Buscar por nome, matrícula ou e-mail…"
+          rotulo="Buscar alunos"
+          carregando={carregandoUrl || consulta.isFetching}
+          className="sm:max-w-md"
+        />
+
+        {/* Trocar de curso reinicia a paginação: a página 3 do recorte
+            anterior quase nunca existe no novo. */}
+        <FiltroDeCurso
+          className="sm:w-52"
+          label="Curso do aluno"
+          valor={cursoId}
+          aoMudar={(novo) => aoFiltrar({ curso: novo, pagina: undefined })}
+        />
+      </div>
 
       <ResultadoLista
         consulta={consulta}
@@ -130,11 +157,15 @@ function ListaAlunos({
           [aluno.aluno?.matricula, aluno.aluno?.curso].filter(Boolean).join(' · ') || null
         }
         vazio={
-          busca ? (
+          busca || cursoId ? (
             <EstadoVazio
               ilustracao="busca"
               titulo="Nenhum aluno encontrado"
-              descricao={`Nada corresponde a “${busca}”. Se a pessoa ainda não tem conta, cadastre-a.`}
+              descricao={
+                busca
+                  ? `Nada corresponde a “${busca}”${cursoId ? ' neste curso' : ''}. Se a pessoa ainda não tem conta, cadastre-a.`
+                  : 'Nenhum aluno pertence a este curso ainda.'
+              }
               acao={
                 <Button variante="secundaria" onClick={aoCadastrar}>
                   Cadastrar aluno
