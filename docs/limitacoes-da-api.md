@@ -135,6 +135,31 @@ pessoa a trocar a senha no primeiro acesso, em Minha conta".
 **Limitação residual:** o backend não tem `deveTrocarSenha`; nada obriga a troca. A tela
 **orienta**, e não finge que força.
 
+## 11. Cursos: sem filtro por curso em disciplinas, e seletor limitado a 100
+
+> Registrada em 2026-10-16, ao construir o CRUD de cursos.
+
+**O que a API oferece:** `GET /cursos` com `busca`, `ativo` e paginação (teto de 100 por
+página, como todo `PaginacaoDto`). A relação N:N é mantida **pelo lado da disciplina**
+(`cursosIds` em `POST`/`PATCH /disciplinas`), e `DisciplinaRespostaDto` devolve `cursos[]`.
+
+**Duas consequências:**
+
+1. **Não há `GET /disciplinas?cursoId=…`.** Não existe, portanto, a visão "disciplinas deste
+   curso" a partir da tela de Cursos. Montá-la no cliente exigiria paginar o catálogo inteiro
+   e cruzar em memória — que fica errado assim que passa de uma página. A tela de Cursos não
+   oferece essa visão, em vez de oferecer uma versão que mente.
+
+2. **O seletor de cursos mostra no máximo 100 ativos.** Acima disso a lista fica incompleta, e
+   o componente diz isso em vez de deixar a pessoa procurar um curso que existe e não aparece.
+   Um `busca` dentro do seletor resolveria; hoje o volume não justifica.
+
+**O que o frontend faz:** o seletor pede `ativo=true` e acrescenta os cursos **já vinculados**,
+mesmo inativos. Isso não é cosmético: `cursosIds` SUBSTITUI o conjunto, então um curso
+desativado que sumisse da lista seria silenciosamente desvinculado ao salvar.
+
+---
+
 ## 9. Lista de professores sem busca
 
 **O que a API oferece:** `GET /professores` aceita apenas paginação (`PaginacaoDto`), ao

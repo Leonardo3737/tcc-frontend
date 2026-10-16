@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/campo';
 import { Alert } from '@/components/ui/alert';
 import { toast } from '@/components/ui/toast';
+import { SeletorDeCursos } from '@/features/cursos/components/seletor-de-cursos';
 import { atualizarDisciplina, criarDisciplina } from '../api/disciplinas.service';
 import {
   CAMPOS_DISCIPLINA,
@@ -88,11 +89,13 @@ function FormularioCriacao({
     register,
     handleSubmit,
     setError,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<DadosCriarDisciplina>({
     resolver: zodResolver(esquemaCriarDisciplina),
     mode: 'onBlur',
-    defaultValues: { nome: '' },
+    defaultValues: { nome: '', cursosIds: [] },
   });
 
   const mutacao = useMutation({
@@ -132,6 +135,12 @@ function FormularioCriacao({
         {...register('nome')}
       />
 
+      <SeletorDeCursos
+        valor={watch('cursosIds')}
+        aoMudar={(ids) => setValue('cursosIds', ids, { shouldValidate: true })}
+        erro={errors.cursosIds?.message}
+      />
+
       <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
         <Button variante="secundaria" onClick={aoCancelar} disabled={enviando}>
           Cancelar
@@ -153,22 +162,34 @@ function FormularioEdicao({
   aoConcluir: () => void;
   aoCancelar: () => void;
 }) {
+  const valoresIniciais = {
+    nome: disciplina.nome,
+    ativa: disciplina.ativa,
+    cursosIds: disciplina.cursos.map((curso) => curso.id),
+  };
+
   const {
     register,
     handleSubmit,
     setError,
+    setValue,
+    watch,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<DadosEditarDisciplina>({
     resolver: zodResolver(esquemaEditarDisciplina),
     mode: 'onBlur',
-    defaultValues: { nome: disciplina.nome, ativa: disciplina.ativa },
+    defaultValues: valoresIniciais,
   });
 
   // O dialogo e reaproveitado entre itens da lista; sem isto, abrir a segunda
   // disciplina mostraria os valores da primeira.
   useEffect(() => {
-    reset({ nome: disciplina.nome, ativa: disciplina.ativa });
+    reset({
+      nome: disciplina.nome,
+      ativa: disciplina.ativa,
+      cursosIds: disciplina.cursos.map((curso) => curso.id),
+    });
   }, [disciplina, reset]);
 
   const mutacao = useMutation({
@@ -199,6 +220,18 @@ function FormularioEdicao({
       />
 
       <Input label="Nome" obrigatorio autoFocus erro={errors.nome?.message} {...register('nome')} />
+
+      {/*
+        `jaVinculados` mantém visível um curso que tenha sido desativado depois
+        de vinculado. Sem isso ele sumiria da lista e, como `cursosIds`
+        SUBSTITUI o conjunto, seria silenciosamente desvinculado ao salvar.
+      */}
+      <SeletorDeCursos
+        valor={watch('cursosIds')}
+        aoMudar={(ids) => setValue('cursosIds', ids, { shouldValidate: true })}
+        erro={errors.cursosIds?.message}
+        jaVinculados={disciplina.cursos}
+      />
 
       <label className="flex items-start gap-3 rounded-lg border border-borda p-3">
         <input

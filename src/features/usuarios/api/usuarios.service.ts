@@ -24,8 +24,17 @@ export function alterarSenha(senhaAtual: string, novaSenha: string): Promise<voi
   return apiCliente.patch<void>('/usuarios/eu/senha', { senhaAtual, novaSenha });
 }
 
-export function atualizarDadosAluno(curso: string | null): Promise<Usuario> {
-  return apiCliente.patch<Usuario>('/alunos/eu', { curso });
+/**
+ * Troca de curso do proprio aluno.
+ *
+ * So e aceita enquanto o aluno NAO tiver participacao registrada em monitoria:
+ * as FKs compostas exigem que o curso do vinculo seja ao mesmo tempo o do aluno
+ * e o da monitoria, e a RN10 preserva vinculos encerrados para sempre. Mudar o
+ * curso depois reescreveria o passado. O backend recusa com 409, e a mensagem
+ * dele ja esta pronta para exibir.
+ */
+export function atualizarDadosAluno(cursoId: string): Promise<Usuario> {
+  return apiCliente.patch<Usuario>('/alunos/eu', { cursoId });
 }
 
 export function atualizarDadosProfessor(departamento: string | null): Promise<Usuario> {

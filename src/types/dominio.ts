@@ -101,6 +101,15 @@ export type DiaSemana = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export interface DadosAluno {
   matricula: string;
+  /** Curso a que o aluno pertence. Obrigatorio no backend — a coluna nao aceita nulo. */
+  cursoId: string;
+  /**
+   * NOME do curso, nao mais texto livre.
+   *
+   * O campo era `varchar` digitado a mao e virou relacao; o nome foi mantido no
+   * contrato, mas o valor vem de `cursos.nome`. Continua anulavel porque so
+   * aparece quando a relacao foi carregada na consulta.
+   */
   curso: string | null;
 }
 
@@ -164,11 +173,40 @@ export interface ConfiguracaoInstituicao {
 // Disciplinas e monitorias
 // ---------------------------------------------------------------------------
 
+/**
+ * Curso do catalogo (GET /cursos).
+ *
+ * Relaciona-se N:N com disciplina (uma disciplina pode ser oferecida por varios
+ * cursos) e 1:N com aluno (todo aluno pertence a exatamente um curso). Nao ha
+ * DELETE (RN10): tirar de circulacao e desativar.
+ */
+export interface Curso {
+  id: string;
+  /** Gerado pelo servidor a partir do nome (ENG001) e IMUTAVEL. */
+  codigo: string;
+  nome: string;
+  ativo: boolean;
+}
+
+/** Curso como aparece dentro de outro recurso — sem `ativo`. */
+export interface ResumoCurso {
+  id: string;
+  codigo: string;
+  nome: string;
+}
+
 export interface Disciplina {
   id: string;
   codigo: string;
   nome: string;
   ativa: boolean;
+  /**
+   * Cursos que oferecem a disciplina — ao menos um, sempre.
+   *
+   * Vem VAZIO quando a relacao nao foi carregada na consulta. O cliente nao
+   * deve concluir dai que a disciplina nao tem curso; so que nao veio.
+   */
+  cursos: ResumoCurso[];
 }
 
 export interface ResumoDisciplina {

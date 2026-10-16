@@ -32,6 +32,12 @@ export const chaves = {
     lista: (filtro: Record<string, unknown>) => ['professores', 'lista', filtro] as const,
   },
 
+  cursos: {
+    raiz: ['cursos'] as const,
+    lista: (filtro: Record<string, unknown>) => ['cursos', 'lista', filtro] as const,
+    detalhe: (id: string) => ['cursos', id] as const,
+  },
+
   disciplinas: {
     raiz: ['disciplinas'] as const,
     lista: (filtro: Record<string, unknown>) => ['disciplinas', 'lista', filtro] as const,
