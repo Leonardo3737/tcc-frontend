@@ -25,6 +25,9 @@ const JANELA_MAXIMA = 60;
  */
 const DURACOES_SUGERIDAS = [30, 45, 60, 90, 120] as const;
 
+/** Ultimo recurso, se nenhuma sugestao couber nos limites e a padrao for invalida. */
+const DURACAO_DE_EMERGENCIA = 60;
+
 export function duracoesDisponiveis(limites: {
   duracaoMinimaMinutos: number;
   duracaoPadraoMinutos: number;
@@ -35,7 +38,27 @@ export function duracoesDisponiveis(limites: {
       minutos >= limites.duracaoMinimaMinutos && minutos <= limites.duracaoMaximaMinutos,
   );
 
-  const todas = new Set<number>([...dentroDosLimites, limites.duracaoPadraoMinutos]);
+  /**
+   * O filtro de finitude nao e defensividade decorativa.
+   *
+   * `limites` vem de GET /configuracao, e ali o tipo `number` e suposicao: uma
+   * resposta sem `duracaoPadraoMinutos` (backend mais antigo, ou cache de fetch
+   * com a forma anterior) o traz `undefined`, e ele viraria um botao escrito
+   * "NaN h NaN" — porque `Math.floor(undefined / 60)` propaga NaN em silencio
+   * em vez de estourar. Aconteceu em uso real.
+   *
+   * `normalizarConfiguracao` ja preenche o campo na fronteira, mas esta funcao
+   * e exportada e testavel por si, entao nao depende de quem a chama.
+   */
+  const todas = new Set<number>(
+    [...dentroDosLimites, limites.duracaoPadraoMinutos].filter(
+      (minutos): minutos is number => typeof minutos === 'number' && Number.isFinite(minutos),
+    ),
+  );
+
+  // Limites incoerentes poderiam esvaziar a lista; sem opcao nao ha o que clicar.
+  if (todas.size === 0) todas.add(DURACAO_DE_EMERGENCIA);
+
   return [...todas].sort((a, b) => a - b);
 }
 
@@ -274,7 +297,7 @@ export function SeletorDeDuracao({
 
       <div className="mt-1.5 flex flex-wrap gap-2">
         {opcoes.map((minutos) => (
-          isNaN(minutos) ? <></> :
+/*           isNaN(minutos) ? <></> : */
             <button
               key={minutos}
               type="button"

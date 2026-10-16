@@ -1,8 +1,8 @@
 import 'server-only';
 
 import { apiPublica } from '@/lib/api/servidor';
-import { FUSO_PADRAO } from '@/lib/datas/fuso';
 import type { ConfiguracaoInstituicao } from '@/types/dominio';
+import { CONFIGURACAO_PADRAO, normalizarConfiguracao } from '../normalizar';
 
 /**
  * Parametros operacionais da instituicao (GET /api/configuracao — rota publica).
@@ -18,31 +18,28 @@ import type { ConfiguracaoInstituicao } from '@/types/dominio';
 /**
  * Cacheado por 1 hora: sao parametros de configuracao do servidor, que so mudam
  * em deploy. Sem isso, toda navegacao pagaria uma requisicao extra.
+ *
+ * A contrapartida do cache e o que motivou `normalizarConfiguracao`: um campo
+ * novo no backend leva ate uma hora para aparecer, e nesse meio-tempo a
+ * resposta servida tem a forma ANTIGA. Para antecipar isso num deploy, basta
+ * revalidar a tag `configuracao`.
  */
 export async function buscarConfiguracao(): Promise<ConfiguracaoInstituicao> {
   try {
-    return await apiPublica.get<ConfiguracaoInstituicao>('/configuracao', {
+    const resposta = await apiPublica.get<unknown>('/configuracao', {
       next: { revalidate: 3600, tags: ['configuracao'] },
     });
+
+    return normalizarConfiguracao(resposta);
   } catch {
     /**
-     * Fallback conservador: sem a configuracao, a aplicacao inteira ficaria
-     * inutilizavel por causa de um endpoint auxiliar. Os valores repetem os
-     * defaults do backend (TIMEZONE_INSTITUICAO e as constantes de D-15).
+     * Sem a configuracao, a aplicacao inteira ficaria inutilizavel por causa de
+     * um endpoint auxiliar.
      *
      * O risco aceito e conhecido: se a instituicao mudar o fuso e este fallback
      * for usado, agendamentos podem ser recusados. Por isso a excecao e apenas
      * absorvida aqui, e nao em toda chamada.
      */
-    return {
-      fusoHorario: FUSO_PADRAO,
-      agendamento: {
-        duracaoMinimaMinutos: 15,
-        duracaoPadraoMinutos: 60,
-        duracaoMaximaMinutos: 240,
-        antecedenciaMinimaMinutos: 0,
-        cancelamentoAntecedenciaMinutos: 0,
-      },
-    };
+    return CONFIGURACAO_PADRAO;
   }
 }
