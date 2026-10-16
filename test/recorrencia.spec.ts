@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { ocorrenciasSemanais } from '@/lib/datas/recorrencia';
-import { duracoesDisponiveis } from '@/features/atendimentos/components/seletor-de-horario';
+import {
+  duracoesDisponiveis,
+  rotuloDuracao,
+} from '@/features/atendimentos/components/seletor-de-horario';
+import { normalizarConfiguracao } from '@/features/configuracao/normalizar';
 import { formatarHora, instanteDeDataHoraLocal, noFuso } from '@/lib/datas/fuso';
 
 /**
@@ -111,5 +115,88 @@ describe('duracoesDisponiveis', () => {
     });
 
     expect(opcoes).toEqual([20]);
+  });
+
+  /**
+   * Regressao observada em uso: a API respondeu SEM `duracaoPadraoMinutos`
+   * (campo novo, resposta anterior ainda no cache de fetch do Next), o valor
+   * entrou na lista como `undefined` e virou um botao escrito "NaN h NaN".
+   * `Math.floor(undefined / 60)` nao estoura — propaga NaN em silencio.
+   */
+  it('descarta duracao padrao ausente em vez de gerar um botao NaN', () => {
+    const limitesSemPadrao = {
+      duracaoMinimaMinutos: 15,
+      duracaoMaximaMinutos: 240,
+    } as unknown as Parameters<typeof duracoesDisponiveis>[0];
+
+    const opcoes = duracoesDisponiveis(limitesSemPadrao);
+
+    expect(opcoes).toEqual([30, 45, 60, 90, 120]);
+    expect(opcoes.every(Number.isFinite)).toBe(true);
+    expect(opcoes.map(rotuloDuracao).join(' ')).not.toContain('NaN');
+  });
+
+  it('descarta duracao padrao nao numerica', () => {
+    const limites = {
+      duracaoMinimaMinutos: 15,
+      duracaoPadraoMinutos: Number.NaN,
+      duracaoMaximaMinutos: 240,
+    };
+
+    expect(duracoesDisponiveis(limites).map(rotuloDuracao).join(' ')).not.toContain('NaN');
+  });
+
+  it('com limites impossiveis ainda oferece uma opcao clicavel', () => {
+    const opcoes = duracoesDisponiveis({
+      duracaoMinimaMinutos: 200,
+      duracaoPadraoMinutos: Number.NaN,
+      duracaoMaximaMinutos: 10,
+    });
+
+    expect(opcoes).toHaveLength(1);
+    expect(Number.isFinite(opcoes[0])).toBe(true);
+  });
+});
+
+describe('normalizarConfiguracao', () => {
+  it('preenche a duracao padrao quando a resposta nao a traz', () => {
+    const config = normalizarConfiguracao({
+      fusoHorario: 'America/Porto_Velho',
+      agendamento: {
+        duracaoMinimaMinutos: 15,
+        duracaoMaximaMinutos: 240,
+        antecedenciaMinimaMinutos: 0,
+        cancelamentoAntecedenciaMinutos: 0,
+      },
+    });
+
+    expect(config.agendamento.duracaoPadraoMinutos).toBe(60);
+    expect(config.fusoHorario).toBe('America/Porto_Velho');
+  });
+
+  it('prende a duracao padrao ao intervalo informado', () => {
+    const config = normalizarConfiguracao({
+      agendamento: { duracaoMinimaMinutos: 90, duracaoMaximaMinutos: 120 },
+    });
+
+    expect(config.agendamento.duracaoPadraoMinutos).toBe(90);
+  });
+
+  it('aceita numero em texto e recusa lixo', () => {
+    const config = normalizarConfiguracao({
+      agendamento: { duracaoPadraoMinutos: '45', duracaoMaximaMinutos: 'muito' },
+    });
+
+    expect(config.agendamento.duracaoPadraoMinutos).toBe(45);
+    expect(config.agendamento.duracaoMaximaMinutos).toBe(240);
+  });
+
+  it('sobrevive a resposta vazia, nula ou de outro formato', () => {
+    for (const bruta of [null, undefined, {}, [], 'erro']) {
+      const config = normalizarConfiguracao(bruta);
+
+      expect(config.fusoHorario.length).toBeGreaterThan(0);
+      expect(Object.values(config.agendamento).every(Number.isFinite)).toBe(true);
+    }
   });
 });

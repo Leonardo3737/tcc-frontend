@@ -114,7 +114,16 @@ function ConteudoFormularioAgendamento() {
   const limites = configuracao.agendamento;
 
   const opcoesDeDuracao = useMemo(() => duracoesDisponiveis(limites), [limites]);
-  const [duracao, setDuracao] = useState(limites.duracaoPadraoMinutos);
+
+  /**
+   * A duração inicial sai da LISTA, não direto da configuração: assim o botão
+   * marcado é sempre um dos que existem. Pegar `duracaoPadraoMinutos` direto
+   * deixaria a seleção fora da lista se o campo viesse ausente da API.
+   */
+  const [duracao, setDuracao] = useState(
+    () => opcoesDeDuracao.find((minutos) => minutos === limites.duracaoPadraoMinutos)
+      ?? opcoesDeDuracao[0]!,
+  );
 
   /**
    * Os limites vem de GET /configuracao — nao sao hardcoded. Se a instituicao
