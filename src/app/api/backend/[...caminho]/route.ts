@@ -117,7 +117,7 @@ async function encaminhar(requisicao: NextRequest, caminho: string[]): Promise<N
      * backend as cegas (ex.: `set-cookie`) daria a ele poder sobre a sessao
      * que esta camada existe justamente para controlar.
      */
-    for (const cabecalho of ['content-type', 'content-disposition', 'content-length']) {
+    for (const cabecalho of ['content-type', 'content-disposition']) {
       const valor = resposta.headers.get(cabecalho);
       if (valor) resultado.headers.set(cabecalho, valor);
     }
