@@ -4,6 +4,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   Library,
+  ScrollText,
   Trophy,
   Users,
   type LucideIcon,
@@ -83,6 +84,17 @@ export const ITENS_NAVEGACAO: ItemNavegacao[] = [
     icone: BookOpen,
     // Só PROFESSOR cria e edita o catálogo (backend: @Perfis(PROFESSOR)).
     perfis: [PerfilUsuario.PROFESSOR],
+    grupo: 'gestao',
+  },
+  {
+    rotulo: 'Editais de monitoria',
+    href: rotas.editais,
+    icone: ScrollText,
+    // Gerenciar edital e consultar candidaturas sao restritos a PROFESSOR no
+    // backend (@Perfis(PROFESSOR) em /editais e em /inscricoes). A inscricao em
+    // si e publica, mas ela nao vive no menu: quem se candidata nao tem conta.
+    perfis: [PerfilUsuario.PROFESSOR],
+    casaPrefixo: true,
     grupo: 'gestao',
   },
   {

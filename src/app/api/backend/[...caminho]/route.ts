@@ -63,27 +63,63 @@ async function encaminhar(requisicao: NextRequest, caminho: string[]): Promise<N
 
   const temCorpo = requisicao.method !== 'GET' && requisicao.method !== 'DELETE';
 
+  /**
+   * O corpo e repassado como BYTES, nao como texto.
+   *
+   * `await requisicao.text()` decodifica como UTF-8, e isso destroi qualquer
+   * corpo binario: o PDF do boletim (`multipart/form-data` em
+   * POST /editais/:id/inscricoes) chegaria ao backend corrompido, e a validacao
+   * de assinatura de arquivo o recusaria sem que a causa ficasse visivel em
+   * lugar nenhum. JSON passa igual pelos dois caminhos, entao ler como
+   * ArrayBuffer nao custa nada ao resto da API.
+   *
+   * `content-length` ja esta entre os CABECALHOS_BLOQUEADOS e e recalculado
+   * pelo fetch; o `content-type` com o boundary do multipart e preservado,
+   * porque sem ele o backend nao consegue separar as partes.
+   */
   try {
     const resposta = await fetch(destino, {
       method: requisicao.method,
       headers: cabecalhos,
-      body: temCorpo ? await requisicao.text() : undefined,
+      body: temCorpo ? await requisicao.arrayBuffer() : undefined,
       // O proxy nunca cacheia: as respostas sao especificas da sessao, e uma
       // resposta cacheada aqui poderia ser servida ao usuario errado.
       cache: 'no-store',
       redirect: 'manual',
     });
 
-    const corpo = await resposta.text();
+    /**
+     * A resposta tambem volta como BYTES.
+     *
+     * `await resposta.text()` decodificaria como UTF-8, e um PDF de verdade
+     * tem bytes que nao formam UTF-8 valido: eles virariam U+FFFD e o arquivo
+     * baixado chegaria corrompido. O download do boletim
+     * (`GET /inscricoes/:id/boletim`) e a unica rota binaria da API hoje, e e
+     * suficiente para que a regra valha para todas.
+     */
+    const corpo = await resposta.arrayBuffer();
 
-    const resultado = new NextResponse(corpo || null, {
+    const resultado = new NextResponse(corpo.byteLength > 0 ? corpo : null, {
       status: resposta.status,
       statusText: resposta.statusText,
     });
 
-    const tipoConteudo = resposta.headers.get('content-type');
-    if (tipoConteudo) {
-      resultado.headers.set('content-type', tipoConteudo);
+    /**
+     * Cabecalhos repassados, por LISTA FECHADA.
+     *
+     * `content-disposition` nao e detalhe: o backend o define como
+     * `attachment` de proposito, para o navegador SALVAR o PDF do candidato em
+     * vez de renderiza-lo a partir do nosso dominio — PDF exibido inline e
+     * superficie de execucao de conteudo de terceiro. Descarta-lo aqui
+     * desfazia essa decisao em silencio.
+     *
+     * A lista e fechada e nao uma copia de tudo: repassar cabecalhos do
+     * backend as cegas (ex.: `set-cookie`) daria a ele poder sobre a sessao
+     * que esta camada existe justamente para controlar.
+     */
+    for (const cabecalho of ['content-type', 'content-disposition', 'content-length']) {
+      const valor = resposta.headers.get(cabecalho);
+      if (valor) resultado.headers.set(cabecalho, valor);
     }
 
     resultado.headers.set('cache-control', 'no-store');

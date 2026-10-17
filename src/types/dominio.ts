@@ -481,3 +481,117 @@ export interface AtividadeMonitor {
   mediaAvaliacoes: number | null;
   disponibilidadesAtivas: number;
 }
+
+// ---------------------------------------------------------------------------
+// Editais de selecao de monitores
+// ---------------------------------------------------------------------------
+
+/** Disponibilidade declarada na candidatura, nao o turno do curso. */
+export const Turno = {
+  MATUTINO: 'MATUTINO',
+  VESPERTINO: 'VESPERTINO',
+  NOTURNO: 'NOTURNO',
+} as const;
+export type Turno = (typeof Turno)[keyof typeof Turno];
+
+/**
+ * Edital como o PROFESSOR o ve (GET /editais).
+ *
+ * As datas sao de CALENDARIO ('AAAA-MM-DD'), nao instantes: o periodo e um
+ * intervalo de dias no fuso da instituicao. Nao converta para `Date` para
+ * comparar — isso reintroduz o fuso do navegador, que e exatamente o que o
+ * formato evita.
+ */
+export interface Edital {
+  id: string;
+  inicioInscricoes: string;
+  fimInscricoes: string;
+  link: string;
+  ano: number;
+  semestre: number;
+  /** false = excluido logicamente. Nao aceita inscricao. */
+  ativo: boolean;
+  /**
+   * DERIVADO NO SERVIDOR: ativo e com hoje dentro do periodo.
+   *
+   * Nunca recalcule isto no cliente. O backend avalia no fuso da instituicao;
+   * refazer a conta no fuso do navegador produz um botao habilitado em um dia
+   * em que a API recusa.
+   */
+  aceitandoInscricoes: boolean;
+  criadoEm: string;
+}
+
+/**
+ * Edital na vitrine publica (GET /editais/abertos).
+ *
+ * Representacao MENOR de proposito: sem `ativo` e sem timestamps. Todo item
+ * desta lista esta aberto — o filtro e do servidor, nao ha o que conferir aqui.
+ */
+export interface EditalPublico {
+  id: string;
+  inicioInscricoes: string;
+  fimInscricoes: string;
+  link: string;
+  ano: number;
+  semestre: number;
+}
+
+export interface ResumoCatalogo {
+  id: string;
+  codigo: string;
+  nome: string;
+}
+
+/** METADADO do PDF. Os bytes so vem por GET /inscricoes/:id/boletim. */
+export interface BoletimResumo {
+  nomeOriginal: string;
+  tamanhoBytes: number;
+  sha256: string;
+}
+
+/**
+ * Candidatura vista pela banca. Rota autenticada, restrita a PROFESSOR.
+ *
+ * `media` NULA significa nota ausente, nunca zero — e por isso que um candidato
+ * sem media jamais pode ser tratado como primeiro colocado.
+ */
+export interface InscricaoEdital {
+  id: string;
+  nomeCompleto: string;
+  matricula: string;
+  email: string;
+  turno: Turno;
+  n1: number | null;
+  n2: number | null;
+  media: number | null;
+  edital: { id: string; ano: number; semestre: number };
+  curso: ResumoCatalogo;
+  disciplina: ResumoCatalogo;
+  professor: { usuarioId: string; nome: string | null };
+  boletim: BoletimResumo | null;
+  /** Aluno ja cadastrado com esta matricula. Resolvido na consulta, nao gravado. */
+  alunoCadastrado: { usuarioId: string; cursoId: string } | null;
+  criadoEm: string;
+}
+
+/**
+ * Resposta do POST publico. Curta de proposito.
+ *
+ * `emailConfirmacaoEnviado: false` NAO significa que a inscricao falhou — ela
+ * esta gravada nos dois casos. Significa que o aviso nao saiu, e a tela precisa
+ * dizer "guarde este numero" em vez de "confira sua caixa de entrada".
+ */
+export interface InscricaoConfirmacao {
+  id: string;
+  editalId: string;
+  nomeCompleto: string;
+  criadoEm: string;
+  emailConfirmacaoEnviado: boolean;
+}
+
+export interface ProfessorPublico {
+  usuarioId: string;
+  nome: string;
+  departamento: string | null;
+}

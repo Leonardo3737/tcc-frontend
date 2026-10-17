@@ -15,6 +15,7 @@ import { CartaoMonitoria } from '@/features/monitorias/components/cartao-monitor
 import { listarMeusAtendimentos } from '@/features/atendimentos/api/atendimentos.service';
 import { listarMinhasMonitorias } from '@/features/monitorias/api/monitorias.service';
 import { buscarMeusPontos } from '@/features/gamificacao/api/gamificacao.service';
+import { NovidadeInscricao } from '@/features/editais/components/novidade-inscricao';
 import { FilaDePendencias } from './fila-pendencias';
 import { useSessao } from '@/providers/sessao-provider';
 import { chaves } from '@/lib/query/chaves';
@@ -99,6 +100,13 @@ export function DashboardAluno() {
         />
         <Indicador rotulo="Pontos" valor={pontos.data?.total ?? '—'} />
       </FaixaIndicadores>
+
+      {/*
+        Acima da fila de pendências de propósito: é uma novidade com prazo, e
+        some sozinha quando não há edital aberto. Abaixo dos indicadores, para
+        não disputar com o resumo do próprio aluno.
+      */}
+      <NovidadeInscricao />
 
       <FilaDePendencias />
 

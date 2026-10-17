@@ -46,17 +46,33 @@ const AJUDA_EMAIL =
  *
  * `aoCadastrar` permite que outro fluxo continue a partir da conta criada (ex.:
  * inscrever o aluno recem-criado numa monitoria).
+ *
+ * `valoresIniciais` permite ENTRAR neste fluxo com campos pre-preenchidos —
+ * hoje, a partir de uma candidatura aprovada em edital. E pre-preenchimento,
+ * nao automacao: o formulario continua sendo o mesmo, a pessoa revisa tudo e a
+ * conta so nasce quando ela confirma. Nenhum caminho alternativo de criacao de
+ * usuario foi aberto.
  */
+export interface ValoresIniciaisAluno {
+  nome?: string;
+  email?: string;
+  matricula?: string;
+  cursoId?: string;
+}
+
 export function DialogoCadastrarUsuario({
   tipo,
   aberto,
   aoFechar,
   aoCadastrar,
+  valoresIniciais,
 }: {
   tipo: TipoCadastro;
   aberto: boolean;
   aoFechar: () => void;
   aoCadastrar?: (usuario: Usuario) => void;
+  /** Só se aplica ao cadastro de ALUNO. */
+  valoresIniciais?: ValoresIniciaisAluno;
 }) {
   const [criado, setCriado] = useState<Usuario | null>(null);
   // Remonta o formulario ao "cadastrar outro", limpando valores e erros.
@@ -98,7 +114,12 @@ export function DialogoCadastrarUsuario({
               rotuloOutro={`Cadastrar outro ${rotulo}`}
             />
           ) : tipo === 'aluno' ? (
-            <FormularioAluno key={geracao} aoCancelar={fechar} aoCriar={aoCriar} />
+            <FormularioAluno
+              key={geracao}
+              aoCancelar={fechar}
+              aoCriar={aoCriar}
+              valoresIniciais={valoresIniciais}
+            />
           ) : (
             <FormularioProfessor key={geracao} aoCancelar={fechar} aoCriar={aoCriar} />
           )}
@@ -140,9 +161,11 @@ function aplicarErro<T extends FieldValues>(
 function FormularioAluno({
   aoCancelar,
   aoCriar,
+  valoresIniciais,
 }: {
   aoCancelar: () => void;
   aoCriar: (usuario: Usuario) => void;
+  valoresIniciais?: ValoresIniciaisAluno;
 }) {
   const queryClient = useQueryClient();
 
@@ -157,7 +180,12 @@ function FormularioAluno({
     resolver: zodResolver(esquemaCadastroAluno),
     mode: 'onBlur',
     reValidateMode: 'onChange',
-    defaultValues: { nome: '', email: '', matricula: '', cursoId: '' },
+    defaultValues: {
+      nome: valoresIniciais?.nome ?? '',
+      email: valoresIniciais?.email ?? '',
+      matricula: valoresIniciais?.matricula ?? '',
+      cursoId: valoresIniciais?.cursoId ?? '',
+    },
   });
 
   const mutacao = useMutation({

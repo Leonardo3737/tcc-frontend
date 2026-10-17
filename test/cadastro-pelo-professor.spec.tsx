@@ -98,8 +98,24 @@ describe('quem pode cadastrar', () => {
     expect(rotulos([PerfilUsuario.ALUNO])).not.toContain('Pessoas');
   });
 
-  it('nao ha rota de cadastro aberta: so login e recuperacao de senha sao publicos', () => {
-    expect([...PREFIXOS_PUBLICOS].sort()).toEqual([rotas.login, rotas.recuperarSenha].sort());
+  /**
+   * A area publica e fechada e explicita.
+   *
+   * O teste e uma lista EXATA de proposito: ele falha quando alguem abre uma
+   * rota nova sem pensar. `/inscricao` entrou com a selecao de monitores e NAO
+   * e auto-cadastro — a inscricao em edital grava uma candidatura e nada mais;
+   * conta de usuario continua nascendo so por POST /alunos e /professores,
+   * ambos restritos a PROFESSOR.
+   */
+  it('a area publica e exatamente login, recuperacao de senha e inscricao em edital', () => {
+    expect([...PREFIXOS_PUBLICOS].sort()).toEqual(
+      [rotas.login, rotas.recuperarSenha, rotas.inscricao].sort(),
+    );
+  });
+
+  it('a inscricao publica nao cria conta: cadastrar segue restrito a professor', () => {
+    expect(podeCadastrarUsuarios(null)).toBe(false);
+    expect(podeCadastrarUsuarios(usuarioTeste([PerfilUsuario.ALUNO]))).toBe(false);
   });
 });
 

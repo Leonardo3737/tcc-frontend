@@ -136,7 +136,18 @@ export function criarClienteHttp(config: ConfiguracaoCliente) {
       ...cabecalhos,
     };
 
-    if (corpo !== undefined) {
+    /**
+     * `FormData` e enviado como esta, e sem `Content-Type`.
+     *
+     * Quem define o cabecalho nesse caso e o navegador, porque ele precisa
+     * incluir o `boundary` que separa as partes — um `multipart/form-data` sem
+     * boundary e um corpo que nenhum servidor consegue ler. Definir o cabecalho
+     * aqui "para padronizar" quebraria o upload do boletim de um jeito que so
+     * aparece como 400 do backend.
+     */
+    const ehFormulario = typeof FormData !== 'undefined' && corpo instanceof FormData;
+
+    if (corpo !== undefined && !ehFormulario) {
       cabecalhosFinais['Content-Type'] = 'application/json';
     }
 
@@ -153,7 +164,7 @@ export function criarClienteHttp(config: ConfiguracaoCliente) {
       const resposta = await fetch(url, {
         method: metodo,
         headers: cabecalhosFinais,
-        body: corpo === undefined ? undefined : JSON.stringify(corpo),
+        body: corpo === undefined ? undefined : ehFormulario ? corpo : JSON.stringify(corpo),
         signal: controlador.signal,
         credentials: config.credenciais,
         ...(next ? { next } : {}),
@@ -191,6 +202,13 @@ export function criarClienteHttp(config: ConfiguracaoCliente) {
       requisitar<T>(caminho, { ...opcoes, metodo: 'POST', corpo }),
     patch: <T>(caminho: string, corpo?: unknown, opcoes?: Omit<OpcoesRequisicao, 'metodo'>) =>
       requisitar<T>(caminho, { ...opcoes, metodo: 'PATCH', corpo }),
+    /**
+     * Existe para `DELETE /editais/:id`, a unica rota DELETE da API — e que,
+     * apesar do verbo, faz exclusao LOGICA (`ativo = false`), porque a RN10
+     * vale ali como em todo o resto. Responde 204, sem corpo.
+     */
+    remover: <T>(caminho: string, opcoes?: Omit<OpcoesRequisicao, 'metodo' | 'corpo'>) =>
+      requisitar<T>(caminho, { ...opcoes, metodo: 'DELETE' }),
   };
 }
 

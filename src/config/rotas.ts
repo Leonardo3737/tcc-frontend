@@ -9,6 +9,8 @@ export const rotas = {
   // Publicas
   login: '/login',
   recuperarSenha: '/recuperar-senha',
+  /** Inscricao em edital: publica, nao exige conta (o candidato tipico nao tem). */
+  inscricao: '/inscricao',
 
   // Autenticadas
   inicio: '/inicio',
@@ -24,6 +26,7 @@ export const rotas = {
   atendimentos: '/atendimentos',
   atendimento: (id: string) => `/atendimentos/${id}`,
   cursos: '/cursos',
+  editais: '/editais',
   disciplinas: '/disciplinas',
   pessoas: '/pessoas',
   ranking: '/ranking',
@@ -40,8 +43,13 @@ export const rotas = {
  * Nao existe auto-cadastro: contas sao criadas por um professor autenticado
  * (POST /alunos e POST /professores), em Pessoas. A recuperacao de senha e
  * publica porque quem esqueceu a senha, por definicao, nao consegue entrar.
+ *
+ * `/inscricao` e publica pelo mesmo tipo de razao, e e a unica ESCRITA anonima
+ * do sistema: o candidato a monitor ainda nao tem conta — ela so e criada pelo
+ * professor depois da aprovacao. Exigir login ali seria exigir o resultado
+ * antes do processo.
  */
-export const PREFIXOS_PUBLICOS = ['/login', '/recuperar-senha'] as const;
+export const PREFIXOS_PUBLICOS = ['/login', '/recuperar-senha', '/inscricao'] as const;
 
 /**
  * Publicas que nao fazem sentido para quem ja esta autenticado — o middleware

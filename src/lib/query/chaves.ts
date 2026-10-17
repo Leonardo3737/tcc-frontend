@@ -32,6 +32,24 @@ export const chaves = {
     lista: (filtro: Record<string, unknown>) => ['professores', 'lista', filtro] as const,
   },
 
+  editais: {
+    raiz: ['editais'] as const,
+    /** Vitrine publica. Fora do escopo autenticado: vale para anonimo tambem. */
+    abertos: ['editais', 'abertos'] as const,
+    lista: (filtro: Record<string, unknown>) => ['editais', 'lista', filtro] as const,
+    detalhe: (id: string) => ['editais', id] as const,
+  },
+
+  inscricoes: {
+    raiz: ['inscricoes'] as const,
+    lista: (filtro: Record<string, unknown>) => ['inscricoes', 'lista', filtro] as const,
+    detalhe: (id: string) => ['inscricoes', id] as const,
+    /** Maior media do edital, para o atalho do primeiro colocado. */
+    topo: (editalId: string) => ['inscricoes', 'topo', editalId] as const,
+  },
+
+  professoresPublicos: ['professores', 'publicos'] as const,
+
   cursos: {
     raiz: ['cursos'] as const,
     lista: (filtro: Record<string, unknown>) => ['cursos', 'lista', filtro] as const,
