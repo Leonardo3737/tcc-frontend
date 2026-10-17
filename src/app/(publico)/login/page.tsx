@@ -5,6 +5,8 @@ import { BookOpen, CalendarCheck, Repeat2, Star, UserRoundPlus } from 'lucide-re
 import { Card, CardConteudo } from '@/components/ui/card';
 import { SkeletonTexto } from '@/components/ui/skeleton';
 import { FormularioLogin } from '@/features/auth/components/formulario-login';
+import { buscarEditaisAbertos } from '@/features/editais/api/editais.servidor';
+import { ChamadaDeInscricao } from '@/features/editais/components/chamada-de-inscricao';
 
 export const metadata: Metadata = { title: 'Entrar' };
 
@@ -19,7 +21,21 @@ export const metadata: Metadata = { title: 'Entrar' };
  * Abaixo de `lg` ele some: no celular, quem abre o login quer entrar, e um bloco
  * institucional so empurraria o formulario para baixo da dobra.
  */
-export default function PaginaLogin() {
+export default async function PaginaLogin() {
+  /**
+   * Resolvido no SERVIDOR, antes do primeiro byte.
+   *
+   * O destaque so existe quando ha edital aberto, e o recorte e do backend
+   * (`GET /editais/abertos`, no fuso da instituicao). Buscar no cliente faria
+   * a novidade aparecer depois, empurrando o formulario de entrada para baixo
+   * com a pagina ja na tela.
+   *
+   * Falha de rede nao derruba o login: `buscarEditaisAbertos` devolve lista
+   * vazia, e a consequencia e apenas nao anunciar a novidade.
+   */
+  const abertos = await buscarEditaisAbertos();
+  const edital = abertos[0] ?? null;
+
   return (
     <div className="grid w-full max-w-5xl items-center gap-10 lg:grid-cols-[1.05fr_minmax(0,26rem)] lg:gap-16">
       {/*
@@ -47,6 +63,19 @@ export default function PaginaLogin() {
               <FormularioLogin />
             </Suspense>
           </CardConteudo>
+
+          {/*
+            A novidade fica DENTRO do cartao, abaixo do formulario: no celular o
+            painel de apresentacao some, e um destaque so visivel em telas
+            grandes nao alcancaria justamente quem se inscreve pelo telefone.
+            Abaixo da acao principal, nao acima — entrar continua sendo o que a
+            tela faz.
+          */}
+          {edital && (
+            <div className="border-t border-borda p-4 sm:px-6">
+              <ChamadaDeInscricao edital={edital} />
+            </div>
+          )}
 
           {/*
             Nao ha auto-cadastro: quem cria contas e um professor, dentro do
