@@ -149,7 +149,9 @@ describe('edicao de disciplina', () => {
     );
 
     const vinculado = await screen.findByRole('checkbox', { name: /Sistemas de Informação/i });
-    const naoVinculado = screen.getByRole('checkbox', { name: /Engenharia de Software/i });
+    const naoVinculado = await screen.findByRole('checkbox', {
+      name: /Engenharia de Software/i,
+    });
 
     expect(vinculado).toBeChecked();
     expect(naoVinculado).not.toBeChecked();

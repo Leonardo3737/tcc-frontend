@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { CheckCircle2, FileText, Paperclip, Send, X } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
@@ -10,12 +10,14 @@ import { useForm, useWatch } from 'react-hook-form';
 import { Alert } from '@/components/ui/alert';
 import { Button, classesBotao } from '@/components/ui/button';
 import { Input, Select } from '@/components/ui/campo';
+import { ComboBox } from '@/components/ui/combobox';
 import { Card, CardCabecalho, CardConteudo } from '@/components/ui/card';
 import { rotas } from '@/config/rotas';
 import { listarCursos } from '@/features/cursos/api/cursos.service';
 import { listarDisciplinas } from '@/features/disciplinas/api/disciplinas.service';
 import { listarProfessoresPublicos } from '@/features/usuarios/api/professores.service';
 import { aplicarErroDeFormulario } from '@/lib/api/formulario';
+import { useListaParaCombo } from '@/hooks/use-lista-para-combo';
 import { chaves } from '@/lib/query/chaves';
 import { cn } from '@/lib/utils';
 import { Turno, type EditalPublico, type InscricaoConfirmacao } from '@/types/dominio';
@@ -34,9 +36,6 @@ const ROTULO_TURNO: Record<Turno, string> = {
   [Turno.VESPERTINO]: 'Vespertino',
   [Turno.NOTURNO]: 'Noturno',
 };
-
-/** Teto do PaginacaoDto do backend. */
-const LIMITE = 100;
 
 /**
  * Inscricao do candidato em um edital. Tela PUBLICA.
@@ -106,10 +105,10 @@ function Conteudo({
   const valores = useWatch({ control });
   const cursoId = valores.cursoId ?? '';
 
-  const cursos = useQuery({
-    queryKey: chaves.cursos.lista({ ativo: true, limite: LIMITE }),
-    queryFn: () => listarCursos({ ativo: true, limite: LIMITE }),
-    staleTime: 5 * 60_000,
+  const cursos = useListaParaCombo({
+    chave: chaves.cursos.lista({ ativo: true }),
+    buscar: (parametros) => listarCursos({ ...parametros, ativo: true }),
+    paraItem: (curso) => ({ valor: curso.id, rotulo: curso.nome, descricao: curso.codigo }),
   });
 
   /**
@@ -117,17 +116,35 @@ function Conteudo({
    * no cliente. Uma disciplina de outro curso seria recusada com 409 no envio:
    * oferecer a opcao e so adiar o erro.
    */
-  const disciplinas = useQuery({
-    queryKey: chaves.disciplinas.lista({ ativa: true, cursoId, limite: LIMITE }),
-    enabled: Boolean(cursoId),
-    queryFn: () => listarDisciplinas({ ativa: true, cursoId, limite: LIMITE }),
-    staleTime: 5 * 60_000,
+  const disciplinas = useListaParaCombo({
+    // O curso entra na chave: trocar de curso é outra lista, não a mesma filtrada.
+    chave: chaves.disciplinas.lista({ ativa: true, cursoId }),
+    habilitado: Boolean(cursoId),
+    buscar: (parametros) => listarDisciplinas({ ...parametros, ativa: true, cursoId }),
+    paraItem: (disciplina) => ({
+      valor: disciplina.id,
+      rotulo: disciplina.nome,
+      descricao: disciplina.codigo,
+    }),
   });
 
-  const professores = useQuery({
-    queryKey: chaves.professoresPublicos,
-    queryFn: () => listarProfessoresPublicos({ limite: LIMITE }),
-    staleTime: 5 * 60_000,
+  /**
+   * Busca NO SERVIDOR, por nome ou departamento.
+   *
+   * `GET /professores/publicos` passou a aceitar `busca`, mas com escopo menor
+   * que o da rota autenticada: nome e departamento, nunca e-mail. Nao e
+   * assimetria por descuido — buscar por e-mail em rota anonima permitiria
+   * digitar um endereco e descobrir, pelo acerto ou pelo vazio, se ele
+   * pertence a um docente. Por isso o campo nao promete e-mail no placeholder.
+   */
+  const professores = useListaParaCombo({
+    chave: chaves.professoresPublicos,
+    buscar: (parametros) => listarProfessoresPublicos(parametros),
+    paraItem: (professor) => ({
+      valor: professor.usuarioId,
+      rotulo: professor.nome,
+      ...(professor.departamento ? { descricao: professor.departamento } : {}),
+    }),
   });
 
   /**
@@ -243,58 +260,52 @@ function Conteudo({
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Select
+              <ComboBox
                 label="Curso"
                 obrigatorio
-                placeholder={cursos.isPending ? 'Carregando…' : 'Selecione o curso'}
-                disabled={cursos.isPending}
+                valor={valores.cursoId ?? ''}
+                rotuloSelecionado={
+                  cursos.itens.find((item) => item.valor === valores.cursoId)?.rotulo
+                }
+                aoEscolher={(id) => setValue('cursoId', id, { shouldValidate: true })}
+                lista={cursos}
+                placeholder="Selecione o curso"
+                placeholderBusca="Buscar curso…"
+                textoVazio="Nenhum curso encontrado"
                 erro={errors.cursoId?.message}
-                opcoes={(cursos.data?.dados ?? []).map((curso) => ({
-                  valor: curso.id,
-                  rotulo: curso.nome,
-                }))}
-                {...register('cursoId')}
               />
 
-              <Select
+              <ComboBox
                 label="Disciplina"
                 obrigatorio
-                disabled={!cursoId || disciplinas.isPending}
-                placeholder={
-                  !cursoId
-                    ? 'Escolha o curso primeiro'
-                    : disciplinas.isPending
-                      ? 'Carregando…'
-                      : 'Selecione a disciplina'
+                disabled={!cursoId}
+                valor={valores.disciplinaId ?? ''}
+                rotuloSelecionado={
+                  disciplinas.itens.find((item) => item.valor === valores.disciplinaId)?.rotulo
                 }
-                ajuda={
-                  cursoId && disciplinas.isSuccess && disciplinas.data.dados.length === 0
-                    ? 'Nenhuma disciplina ativa neste curso.'
-                    : undefined
-                }
+                aoEscolher={(id) => setValue('disciplinaId', id, { shouldValidate: true })}
+                lista={disciplinas}
+                placeholder={cursoId ? 'Selecione a disciplina' : 'Escolha o curso primeiro'}
+                placeholderBusca="Buscar disciplina…"
+                textoVazio="Nenhuma disciplina ativa neste curso"
                 erro={errors.disciplinaId?.message}
-                opcoes={(disciplinas.data?.dados ?? []).map((disciplina) => ({
-                  valor: disciplina.id,
-                  rotulo: `${disciplina.codigo} — ${disciplina.nome}`,
-                }))}
-                {...register('disciplinaId')}
               />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Select
+              <ComboBox
                 label="Professor responsável"
                 obrigatorio
-                disabled={professores.isPending}
-                placeholder={professores.isPending ? 'Carregando…' : 'Selecione o professor'}
+                valor={valores.professorId ?? ''}
+                rotuloSelecionado={
+                  professores.itens.find((item) => item.valor === valores.professorId)?.rotulo
+                }
+                aoEscolher={(id) => setValue('professorId', id, { shouldValidate: true })}
+                lista={professores}
+                placeholder="Selecione o professor"
+                placeholderBusca="Buscar por nome ou departamento…"
+                textoVazio="Nenhum professor encontrado"
                 erro={errors.professorId?.message}
-                opcoes={(professores.data?.dados ?? []).map((professor) => ({
-                  valor: professor.usuarioId,
-                  rotulo: professor.departamento
-                    ? `${professor.nome} · ${professor.departamento}`
-                    : professor.nome,
-                }))}
-                {...register('professorId')}
               />
 
               <Select

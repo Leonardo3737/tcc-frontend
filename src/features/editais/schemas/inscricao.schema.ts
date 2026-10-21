@@ -17,9 +17,8 @@ export const MIME_PDF = 'application/pdf';
  * isso o vazio vira `undefined` e sai do corpo da requisicao.
  */
 const nota = z
-  .union([z.literal(''), z.coerce.number()])
-  .optional()
-  .transform((valor) => (valor === '' || valor === undefined ? undefined : Number(valor)))
+  .coerce.number()
+  .transform((valor) => (valor === undefined ? 0 : Number(valor)))
   .refine((valor) => valor === undefined || !Number.isNaN(valor), {
     message: 'Informe um número (ex.: 8.5)',
   })

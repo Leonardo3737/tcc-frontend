@@ -117,10 +117,9 @@ function FormularioCriacao({
 
       <Input
         label="Nome"
-        placeholder="Engenharia de Software"
+        placeholder="Nome do curso"
         autoFocus
         obrigatorio
-        ajuda="O código (ex.: ENG001) é gerado a partir do nome e não muda depois, mesmo se você renomear."
         erro={errors.nome?.message}
         {...register('nome')}
       />

@@ -1,11 +1,20 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { ArrowDown, ArrowUp, Download, FileX2, Trophy, UserPlus, Users } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  ArrowDown,
+  ArrowUp,
+  Download,
+  FileX2,
+  Trophy,
+  UserCheck,
+  Users,
+} from 'lucide-react';
 import { useState } from 'react';
 
 import { CampoBusca } from '@/components/comum/campo-busca';
 import { Paginacao } from '@/components/comum/paginacao';
+import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button, classesBotao } from '@/components/ui/button';
 import { Select } from '@/components/ui/campo';
@@ -21,24 +30,25 @@ import {
   TabelaCorpo,
   TabelaLinha,
 } from '@/components/ui/tabela';
+import { toast } from '@/components/ui/toast';
 import { FiltroDeCurso } from '@/features/cursos/components/seletor-de-cursos';
-import {
-  DialogoCadastrarUsuario,
-  type ValoresIniciaisAluno,
-} from '@/features/usuarios/components/dialogo-cadastrar-usuario';
 import { useFiltrosUrl } from '@/hooks/use-filtros-url';
+import { mensagemDeErro } from '@/lib/api/erros';
 import { formatarDataHora } from '@/lib/datas/fuso';
 import { chaves } from '@/lib/query/chaves';
 import { cn } from '@/lib/utils';
 import { useSessao } from '@/providers/sessao-provider';
 import { Turno, type Edital, type InscricaoEdital } from '@/types/dominio';
 import {
+  aprovarInscricao,
   listarInscricoes,
+  resumoPorDisciplina,
   urlDoBoletim,
   type CampoOrdenacaoInscricao,
   type DirecaoOrdenacao,
 } from '../api/inscricoes.service';
 import type { SituacaoEdital } from '../situacao';
+import { FaixaDeDisciplinas } from './faixa-de-disciplinas';
 
 const ROTULO_TURNO: Record<Turno, string> = {
   [Turno.MATUTINO]: 'Matutino',
@@ -78,10 +88,12 @@ export function ListaInscricoes({
   const { fuso } = useSessao();
   const { obter, obterNumero, definir, pendente } = useFiltrosUrl();
   const [detalhe, setDetalhe] = useState<InscricaoEdital | null>(null);
-  const [cadastrando, setCadastrando] = useState<ValoresIniciaisAluno | null>(null);
+  const [erroAprovacao, setErroAprovacao] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const busca = obter('busca');
   const cursoId = obter('curso');
+  const disciplinaId = obter('disciplina');
   const turno = obter('turno');
   const ordenarPor = (obter('ordem', 'media') || 'media') as CampoOrdenacaoInscricao;
   const direcao = (obter('dir', 'desc') || 'desc') as DirecaoOrdenacao;
@@ -91,6 +103,7 @@ export function ListaInscricoes({
     editalId: edital.id,
     busca: busca || undefined,
     cursoId: cursoId || undefined,
+    disciplinaId: disciplinaId || undefined,
     turno: (turno || undefined) as Turno | undefined,
     ordenarPor,
     direcao,
@@ -104,44 +117,104 @@ export function ListaInscricoes({
   });
 
   /**
-   * MAIOR MEDIA do edital, para o atalho do primeiro colocado.
-   *
-   * Consulta propria, de uma linha so, ordenada por media desc com NULLS LAST
-   * no servidor. Nao se usa a primeira linha da TABELA para isso: ela depende
-   * do filtro, da ordenacao escolhida e da pagina — "quem esta no topo da tela"
-   * nao e "quem tem a maior media do edital".
-   *
-   * So roda com o edital ENCERRADO, que e quando o atalho existe.
+   * Panorama por disciplina. Recebe os MESMOS filtros da lista (menos pagina e
+   * ordenacao): sem isso o numero do cartao nao bateria com o conteudo logo
+   * abaixo dele.
    */
-  const topo = useQuery({
-    queryKey: chaves.inscricoes.topo(edital.id),
-    enabled: situacao === 'ENCERRADO',
-    queryFn: () =>
-      listarInscricoes({
-        editalId: edital.id,
-        ordenarPor: 'media',
-        direcao: 'desc',
-        limite: 1,
-      }),
+  const filtroResumo = {
+    editalId: edital.id,
+    busca: busca || undefined,
+    cursoId: cursoId || undefined,
+    turno: (turno || undefined) as Turno | undefined,
+  };
+
+  const resumo = useQuery({
+    queryKey: chaves.inscricoes.resumo(filtroResumo),
+    queryFn: () => resumoPorDisciplina(filtroResumo),
   });
 
   /**
-   * `null` quando ninguem tem media calculada: nota ausente NAO conta como
-   * zero, entao nesse caso nao ha primeiro colocado a apontar.
+   * MAIOR MEDIA DA DISCIPLINA do candidato — nao do edital inteiro.
+   *
+   * A selecao de monitor acontece por disciplina: um edital com sete
+   * disciplinas tem sete aprovados. Marcar so a maior media geral apontava uma
+   * pessoa e deixava as outras seis sem destaque nenhum. O resumo ja traz
+   * `melhorMedia` por disciplina, entao a correcao sai de graca — e some a
+   * consulta separada que existia para isso.
+   *
+   * Nao se usa a primeira linha da TABELA: ela depende do filtro, da ordenacao
+   * escolhida e da pagina. "Quem esta no topo da tela" nao e "quem tem a maior
+   * media da disciplina".
    */
-  const maiorMedia = topo.data?.dados[0]?.media ?? null;
+  const melhorPorDisciplina = new Map(
+    (resumo.data ?? []).map((linha) => [linha.disciplina.id, linha.melhorMedia]),
+  );
 
-  const ehPrimeiroColocado = (inscricao: InscricaoEdital) =>
-    situacao === 'ENCERRADO' &&
-    maiorMedia !== null &&
-    inscricao.media !== null &&
-    // Empate na maior media marca TODOS os empatados, não só um.
-    inscricao.media === maiorMedia;
+  const ehPrimeiroColocado = (inscricao: InscricaoEdital) => {
+    if (situacao !== 'ENCERRADO') return false;
 
-  const temFiltro = Boolean(busca || cursoId || turno);
+    const melhor = melhorPorDisciplina.get(inscricao.disciplina.id) ?? null;
+
+    return (
+      melhor !== null &&
+      // Media ausente nunca e primeiro lugar: falta de nota nao e nota baixa.
+      inscricao.media !== null &&
+      // Empate na maior media marca TODOS os empatados, nao so um.
+      inscricao.media === melhor
+    );
+  };
+
+  /**
+   * Aprovacao da candidatura.
+   *
+   * O toast relata o que DE FATO aconteceu, e nao um texto fixo: a operacao
+   * tem tres passos de "encontrar ou criar", e dizer "conta criada, senha
+   * enviada" quando a conta ja existia faria o monitor esperar um e-mail que
+   * nunca sai.
+   */
+  const aprovar = useMutation({
+    mutationFn: aprovarInscricao,
+
+    onSuccess: (resultado) => {
+      /**
+       * Invalida tambem monitorias: a aprovacao cria uma, e a lista lateral de
+       * "suas monitorias" passaria a divergir do que acabou de acontecer.
+       */
+      void queryClient.invalidateQueries({ queryKey: chaves.inscricoes.raiz });
+      void queryClient.invalidateQueries({ queryKey: chaves.monitorias.raiz });
+
+      const sobreMonitoria = resultado.monitoria.criada
+        ? 'Monitoria criada'
+        : 'Monitor acrescentado à monitoria que já existia';
+
+      const sobreConta = resultado.monitor.contaCriada
+        ? ' A conta foi criada e a senha provisória foi enviada por e-mail.'
+        : ' A conta já existia e foi reaproveitada — nenhuma credencial foi enviada.';
+
+      toast.sucesso(`${resultado.monitor.nome} é monitor`, sobreMonitoria + '.' + sobreConta);
+      setDetalhe(null);
+      setErroAprovacao(null);
+    },
+
+    /**
+     * A operacao NAO e atomica, por decisao do backend: pode parar entre criar
+     * a monitoria e habilitar o monitor. Como ela e repetivel, a mensagem fica
+     * no dialogo (que segue aberto) em vez de virar um toast que some — o
+     * caminho para resolver e tentar de novo ali mesmo.
+     */
+    onError: (erro) => setErroAprovacao(mensagemDeErro(erro)),
+  });
+
+  const temFiltro = Boolean(busca || cursoId || disciplinaId || turno);
 
   const limpar = () =>
-    definir({ busca: undefined, curso: undefined, turno: undefined, pagina: undefined });
+    definir({
+      busca: undefined,
+      curso: undefined,
+      disciplina: undefined,
+      turno: undefined,
+      pagina: undefined,
+    });
 
   /** Trocar filtro ou ordenação reinicia a página: a 3 do recorte anterior raramente existe. */
   const filtrar = (novos: Record<string, string | number | undefined>) =>
@@ -154,6 +227,15 @@ export function ListaInscricoes({
 
   return (
     <div className="space-y-4">
+      <FaixaDeDisciplinas
+        resumo={resumo.data ?? []}
+        carregando={resumo.isPending}
+        erro={resumo.isError}
+        disciplinaId={disciplinaId}
+        totalGeral={(resumo.data ?? []).reduce((soma, linha) => soma + linha.totalInscricoes, 0)}
+        aoEscolher={(nova) => filtrar({ disciplina: nova })}
+      />
+
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <CampoBusca
           valorInicial={busca}
@@ -164,10 +246,15 @@ export function ListaInscricoes({
           className="flex-1"
         />
 
+        {/*
+          Trocar o curso limpa a disciplina: a anterior pode não pertencer ao
+          curso novo, e o par incoerente devolveria lista vazia sem explicar
+          por quê.
+        */}
         <FiltroDeCurso
-          className="lg:w-48"
+          className="lg:w-52"
           valor={cursoId}
-          aoMudar={(novo) => filtrar({ curso: novo })}
+          aoMudar={(novo) => filtrar({ curso: novo, disciplina: undefined })}
         />
 
         <Select
@@ -283,7 +370,7 @@ export function ListaInscricoes({
                         {ehPrimeiroColocado(inscricao) && (
                           <Trophy
                             className="h-4 w-4 shrink-0 text-acento-forte"
-                            aria-label="Maior média do edital"
+                            aria-label="Maior média da disciplina"
                           />
                         )}
                         <span className="min-w-0">
@@ -338,7 +425,7 @@ export function ListaInscricoes({
                       {ehPrimeiroColocado(inscricao) && (
                         <Trophy
                           className="h-3.5 w-3.5 shrink-0 text-acento-forte"
-                          aria-label="Maior média do edital"
+                          aria-label="Maior média da disciplina"
                         />
                       )}
                       <span className="truncate">{inscricao.nomeCompleto}</span>
@@ -378,25 +465,16 @@ export function ListaInscricoes({
       <DialogoInscricao
         inscricao={detalhe}
         fuso={fuso}
-        primeiroColocado={detalhe ? ehPrimeiroColocado(detalhe) : false}
-        aoFechar={() => setDetalhe(null)}
-        aoCadastrar={(valores) => {
+        situacao={situacao}
+        aoFechar={() => {
           setDetalhe(null);
-          setCadastrando(valores);
+          setErroAprovacao(null);
         }}
+        aoAprovar={() => detalhe && aprovar.mutate(detalhe.id)}
+        aprovando={aprovar.isPending}
+        erroAprovacao={erroAprovacao}
       />
 
-      {/*
-        O fluxo de cadastro é o MESMO de Pessoas — apenas pré-preenchido. A
-        conta só nasce quando o professor confirma; nada é criado por ter a
-        maior média.
-      */}
-      <DialogoCadastrarUsuario
-        tipo="aluno"
-        aberto={cadastrando !== null}
-        aoFechar={() => setCadastrando(null)}
-        {...(cadastrando ? { valoresIniciais: cadastrando } : {})}
-      />
     </div>
   );
 }
@@ -488,15 +566,19 @@ function BotaoOrdem({
 function DialogoInscricao({
   inscricao,
   fuso,
-  primeiroColocado,
+  situacao,
   aoFechar,
-  aoCadastrar,
+  aoAprovar,
+  aprovando,
+  erroAprovacao,
 }: {
   inscricao: InscricaoEdital | null;
   fuso: string;
-  primeiroColocado: boolean;
+  situacao: SituacaoEdital;
   aoFechar: () => void;
-  aoCadastrar: (valores: ValoresIniciaisAluno) => void;
+  aoAprovar: () => void;
+  aprovando: boolean;
+  erroAprovacao: string | null;
 }) {
   if (!inscricao) return null;
 
@@ -524,7 +606,7 @@ function DialogoInscricao({
               className={classesBotao('secundaria', 'md', 'w-full')}
             >
               <Download className="mr-2 h-4 w-4" aria-hidden />
-              Baixar boletim ({inscricao.boletim.nomeOriginal})
+              Baixar boletim
             </a>
           ) : (
             <p className="flex items-center gap-2 rounded-md bg-fundo-suave px-3 py-2 text-sm text-texto-suave">
@@ -533,34 +615,66 @@ function DialogoInscricao({
             </p>
           )}
 
+          {erroAprovacao && (
+            <Alert tom="erro" titulo="Não foi possível aprovar">
+              {erroAprovacao}
+            </Alert>
+          )}
+
           {/*
-            O atalho só existe com o edital encerrado e para quem tem a maior
-            média. Se a matrícula já pertence a um aluno cadastrado, oferecer
-            "cadastrar" produziria duplicidade — e o backend sabe disso
-            (`alunoCadastrado`), então a tela diz em vez de oferecer.
+            Aprovar NÃO é privilégio do primeiro colocado.
+            
+            Uma disciplina pode ter mais de uma vaga, e o backend reaproveita a
+            monitoria ao aprovar o segundo. Oferecer o botão só a quem tem a
+            maior média impediria o caso normal — o troféu continua apontando o
+            melhor, como orientação, não como trava.
           */}
-          {primeiroColocado &&
-            (jaTemConta ? (
-              <p className="rounded-md border border-borda bg-fundo-suave px-3 py-2 text-sm text-texto-suave">
-                Maior média do edital. Esta matrícula <strong>já tem conta</strong> na
-                plataforma — não é preciso cadastrar.
+          <div className="space-y-2 rounded-lg border border-borda bg-fundo-suave/60 p-3">
+            <p className="text-sm text-texto">
+              Aprovar cria a monitoria de <strong>{inscricao.disciplina.nome}</strong> (ou
+              reaproveita a que já existe neste semestre) e habilita{' '}
+              <strong>{inscricao.nomeCompleto}</strong> como monitor.
+            </p>
+
+            {/*
+              Quem fica como responsável é quem clica — a RN01 exige que quem
+              habilita seja o responsável pela monitoria. O professor indicado
+              na candidatura é indicação, não atribuição.
+            */}
+            {inscricao.professor.nome
+              ?
+              <p className="text-xs text-texto-suave">
+                {inscricao.professor.nome} fica como professor responsável pela monitoria.
               </p>
-            ) : (
-              <Button
-                className="w-full"
-                onClick={() =>
-                  aoCadastrar({
-                    nome: inscricao.nomeCompleto,
-                    email: inscricao.email,
-                    matricula: inscricao.matricula,
-                    cursoId: inscricao.curso.id,
-                  })
-                }
-                iconeEsquerda={<UserPlus className="h-4 w-4" aria-hidden />}
-              >
-                Cadastrar como aluno
-              </Button>
-            ))}
+              : <></>}
+
+            <p className="text-xs text-texto-suave">
+              {jaTemConta
+                ? 'Esta matrícula já tem conta na plataforma — nenhuma credencial será enviada.'
+                : 'A conta do candidato será criada e a senha provisória vai para o e-mail dele.'}
+            </p>
+
+            {/*
+              O backend não exige edital encerrado, e não inventamos a regra —
+              mas aprovar com inscrição em andamento é decisão que merece ser
+              dita em voz alta.
+            */}
+            {situacao === 'ABERTO' && (
+              <p className="text-xs text-alerta">
+                As inscrições ainda estão abertas: outros candidatos podem se inscrever.
+              </p>
+            )}
+
+            <Button
+              className="w-full"
+              carregando={aprovando}
+              disabled={aprovando}
+              onClick={aoAprovar}
+              iconeEsquerda={<UserCheck className="h-4 w-4" aria-hidden />}
+            >
+              {aprovando ? 'Aprovando…' : 'Aprovar candidatura'}
+            </Button>
+          </div>
         </div>
       </DialogConteudo>
     </Dialog>

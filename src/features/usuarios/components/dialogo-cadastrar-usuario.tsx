@@ -1,17 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm, type FieldValues, type Path, type UseFormSetError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MailCheck } from 'lucide-react';
+import { useState } from 'react';
+import { useForm, type FieldValues, type Path, type UseFormSetError } from 'react-hook-form';
 
-import { Dialog, DialogConteudo } from '@/components/ui/dialog';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/campo';
-import { Alert } from '@/components/ui/alert';
+import { Dialog, DialogConteudo } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/toast';
 import { SeletorDeCurso } from '@/features/cursos/components/seletor-de-cursos';
+import { ApiError } from '@/lib/api/erros';
+import { aplicarErroDeFormulario } from '@/lib/api/formulario';
+import { chaves } from '@/lib/query/chaves';
+import type { Usuario } from '@/types/dominio';
 import { cadastrarAluno } from '../api/alunos.service';
 import { cadastrarProfessor } from '../api/professores.service';
 import {
@@ -23,10 +27,6 @@ import {
   type DadosCadastroAluno,
   type DadosCadastroProfessor,
 } from '../schemas/cadastro-pelo-professor.schema';
-import { ApiError } from '@/lib/api/erros';
-import { aplicarErroDeFormulario } from '@/lib/api/formulario';
-import { chaves } from '@/lib/query/chaves';
-import type { Usuario } from '@/types/dominio';
 
 export type TipoCadastro = 'aluno' | 'professor';
 
@@ -383,9 +383,8 @@ function ConfirmacaoConta({
       <div className="flex gap-3 rounded-md bg-sucesso-suave/70 px-3 py-3 text-sm text-texto">
         <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-sucesso" aria-hidden />
         <p>
-          Enviamos a senha de acesso para{' '}
-          <strong className="break-all font-semibold">{usuario.email}</strong>. Ela não aparece
-          aqui: só {usuario.nome.split(' ')[0]} a recebe.
+          Enviamos a senha de acesso para: <br />
+          <strong className="break-all font-semibold">{usuario.email}</strong>
         </p>
       </div>
 

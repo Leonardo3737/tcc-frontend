@@ -5,7 +5,14 @@ import userEvent from '@testing-library/user-event';
 import { DialogoAdicionarParticipante } from '@/features/monitorias/components/dialogo-adicionar-participante';
 import { PainelDisciplinas } from '@/features/disciplinas/components/painel-disciplinas';
 import { PerfilUsuario } from '@/types/dominio';
-import { monitoriaTeste, renderizar, usuarioTeste } from './utilitarios';
+import {
+  abrirCombo,
+  escolherNoCombo,
+  monitoriaTeste,
+  opcoesDoCombo,
+  renderizar,
+  usuarioTeste,
+} from './utilitarios';
 
 const definir = vi.fn();
 
@@ -80,8 +87,7 @@ describe('catalogo de disciplinas', () => {
 
     renderizar(<PainelDisciplinas />, { usuario: PROFESSOR });
 
-    const filtro = await screen.findByLabelText(/^curso$/i);
-    await usuario.selectOptions(filtro, ENG.id);
+    await escolherNoCombo(usuario, /^curso$/i, new RegExp(ENG.nome, 'i'));
 
     // Página some junto: a página 3 do recorte anterior quase nunca existe no novo.
     expect(definir).toHaveBeenCalledWith({ curso: ENG.id, pagina: undefined });
@@ -93,13 +99,15 @@ describe('catalogo de disciplinas', () => {
       '/disciplinas': () => pagina([]),
     });
 
+    const usuario = userEvent.setup();
     renderizar(<PainelDisciplinas />, { usuario: PROFESSOR });
 
-    const filtro = await screen.findByLabelText(/^curso$/i);
-    const rotulos = [...filtro.querySelectorAll('option')].map((o) => o.textContent);
+    await abrirCombo(usuario, /^curso$/i);
+    await screen.findByRole('option', { name: /Sistemas/i });
+    const rotulos = opcoesDoCombo().join(' ');
 
     expect(rotulos).toContain('Todos os cursos');
-    expect(rotulos.join(' ')).toContain('Sistemas (inativo)');
+    expect(rotulos).toContain('Sistemas (inativo)');
   });
 });
 

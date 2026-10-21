@@ -108,6 +108,29 @@
     }
   }
 
+  /*
+   * Select nativo com a aparencia do <ComboBox>.
+   *
+   * A seta do sistema e removida (`appearance: none`) e substituida pelo mesmo
+   * icone do combobox, posicionado pelo componente. Sem isso os dois controles
+   * ficariam lado a lado com setas diferentes — no Windows e no macOS o
+   * desenho nativo nem sequer e o mesmo.
+   *
+   * A cor de "nada escolhido" e uma regra CSS, e nao uma classe condicional,
+   * porque o <select> e NAO CONTROLADO: o React nao re-renderiza quando a
+   * pessoa troca a opcao, entao nao ha momento em que o componente possa
+   * trocar a classe. `:has(option[value='']:checked)` observa o DOM direto e
+   * acompanha a selecao sem estado nenhum.
+   */
+  .select-padrao {
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .select-padrao:has(option[value='']:checked) {
+    color: rgb(var(--cor-texto-suave));
+  }
+
   /* Rolagem horizontal sem barra visivel (abas no celular). */
   .rolagem-discreta {
     scrollbar-width: none;

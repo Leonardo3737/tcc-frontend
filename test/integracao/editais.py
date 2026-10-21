@@ -284,6 +284,30 @@ verificar('filtro de turno recorta', filtrada['meta']['total'] == 0,
 st, porCurso = chamar('GET', f'{API}/inscricoes?editalId={editalId}&cursoId={curso["id"]}', prof)
 verificar('filtro de curso recorta', porCurso['meta']['total'] >= 2)
 
+st, porDisciplina = chamar(
+    'GET', f'{API}/inscricoes?editalId={editalId}&disciplinaId={disc["id"]}', prof)
+verificar('filtro de disciplina recorta', st == 200 and porDisciplina['meta']['total'] >= 2,
+          f"({porDisciplina['meta']['total'] if st == 200 else st})")
+verificar('todas as linhas sao da disciplina pedida',
+          all(i['disciplina']['id'] == disc['id'] for i in porDisciplina['dados']))
+
+# Disciplina de OUTRO curso: o par incompativel devolve vazio, nao erro.
+st, outraDisc = chamar('POST', API + '/disciplinas', prof,
+                       {'nome': f'Fora do curso {sufixo}', 'cursosIds': [curso['id']]})
+st, semResultado = chamar(
+    'GET', f'{API}/inscricoes?editalId={editalId}&disciplinaId={outraDisc["id"]}', prof)
+verificar('disciplina sem candidatura devolve lista vazia',
+          st == 200 and semResultado['meta']['total'] == 0,
+          f"({semResultado['meta']['total'] if st == 200 else st})")
+
+st, combinado = chamar(
+    'GET',
+    f'{API}/inscricoes?editalId={editalId}&cursoId={curso["id"]}&disciplinaId={disc["id"]}',
+    prof)
+verificar('curso e disciplina combinam em vez de se anular',
+          st == 200 and combinado['meta']['total'] >= 2,
+          f"({combinado['meta']['total'] if st == 200 else st})")
+
 termo = urllib.parse.quote(f'Maria Teste {sufixo}')
 st, buscada = chamar('GET', f'{API}/inscricoes?editalId={editalId}&busca={termo}', prof)
 verificar('busca por nome encontra', buscada['meta']['total'] >= 1)

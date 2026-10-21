@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, type RenderOptions } from '@testing-library/react';
+import { render, screen, type RenderOptions } from '@testing-library/react';
+import type userEvent from '@testing-library/user-event';
 
 import { SessaoProvider } from '@/providers/sessao-provider';
 import { MonitoriaProvider } from '@/providers/monitoria-provider';
@@ -107,3 +108,45 @@ export function renderizar(
  * roda em ordem diferente da que o codigo sugere. Cada suite declara o seu
  * `vi.mock('next/navigation', ...)` no topo do proprio arquivo.
  */
+
+/**
+ * Dirige um <ComboBox>.
+ *
+ * Catalogos que crescem (curso, disciplina, professor) deixaram de ser
+ * `<select>` nativo e viraram combobox com busca e paginacao, entao
+ * `selectOptions` nao se aplica mais a eles. Estes dois utilitarios existem
+ * para que a mudanca de COMPONENTE nao obrigue a reescrever a INTENCAO de cada
+ * teste.
+ *
+ * O gatilho e encontrado por `role="combobox"` + nome acessivel (o rotulo,
+ * mesmo quando visualmente oculto nos filtros).
+ */
+export async function abrirCombo(
+  usuario: ReturnType<typeof userEvent.setup>,
+  rotulo: RegExp | string,
+): Promise<HTMLElement> {
+  const gatilho = await screen.findByRole('combobox', { name: rotulo });
+  await usuario.click(gatilho);
+  return gatilho;
+}
+
+export async function escolherNoCombo(
+  usuario: ReturnType<typeof userEvent.setup>,
+  rotulo: RegExp | string,
+  opcao: RegExp | string,
+  { buscar }: { buscar?: string } = {},
+): Promise<void> {
+  await abrirCombo(usuario, rotulo);
+
+  if (buscar !== undefined) {
+    await usuario.type(screen.getByRole('textbox', { name: /buscar em/i }), buscar);
+  }
+
+  // `findBy`: a lista chega por requisição, e com busca no servidor há debounce.
+  await usuario.click(await screen.findByRole('option', { name: opcao }, { timeout: 3000 }));
+}
+
+/** Rotulos das opcoes visiveis no combobox aberto. */
+export function opcoesDoCombo(): string[] {
+  return screen.getAllByRole('option').map((opcao) => opcao.textContent ?? '');
+}

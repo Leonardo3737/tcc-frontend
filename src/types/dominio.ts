@@ -595,3 +595,66 @@ export interface ProfessorPublico {
   nome: string;
   departamento: string | null;
 }
+
+/**
+ * Uma linha por disciplina que RECEBEU candidatura no recorte consultado
+ * (GET /inscricoes/resumo).
+ *
+ * LIMITE QUE A TELA PRECISA DECLARAR: disciplina com ZERO candidatos nao
+ * aparece. O edital nao registra quais disciplinas oferece — a tabela tem so
+ * periodo, link e semestre —, entao este e o conjunto do que CHEGOU, nao do
+ * que foi OFERTADO. Nao da para distinguir "ninguem se inscreveu em Calculo I"
+ * de "Calculo I nao faz parte deste edital".
+ */
+export interface ResumoPorDisciplina {
+  disciplina: ResumoCatalogo;
+  totalInscricoes: number;
+  /** Quantos dao para RANQUEAR: tem n1 e n2, logo tem media. */
+  comMedia: number;
+  /** Derivado: `totalInscricoes - comMedia`. Sem nota nao entra na ordenacao. */
+  semMedia: number;
+  /** Maior media da disciplina. NULA quando ninguem tem media — nunca zero. */
+  melhorMedia: number | null;
+  /**
+   * Ja existe monitoria DESTE edital para a disciplina E ela tem monitor.
+   *
+   * As duas condicoes andam juntas: monitoria sem monitor e aprovacao pela
+   * metade, e marcar o grupo como pronto nesse estado esconderia exatamente o
+   * caso que precisa de atencao.
+   */
+  monitoriaCadastrada: boolean;
+  /** A monitoria vinda deste edital, se houver — mesmo ainda sem monitor. */
+  monitoriaId: string | null;
+  /** Monitores ATIVOS nela. Mais de um e o caso de disciplina com varias vagas. */
+  monitoresHabilitados: number;
+}
+
+/**
+ * Resultado de aprovar uma candidatura (POST /inscricoes/:id/aprovar).
+ *
+ * A operacao tem tres passos de "encontrar ou criar", e a resposta diz em cada
+ * um se houve CRIACAO ou REUSO. Essa distincao e o que torna repetir a
+ * aprovacao seguro — e e o que a tela precisa para nao prometer um e-mail que
+ * nao foi enviado.
+ */
+export interface AprovacaoDeInscricao {
+  inscricaoId: string;
+  monitoria: {
+    id: string;
+    disciplinaId: string;
+    ano: number;
+    semestre: number;
+    /** false = a monitoria da oferta ja existia e foi reaproveitada. */
+    criada: boolean;
+  };
+  monitor: {
+    /** AD-03: id de usuario e de aluno sao o mesmo. */
+    usuarioId: string;
+    nome: string;
+    email: string;
+    /** Vinculo criado em `monitoria_participantes`. Nunca reusado. */
+    participanteId: string;
+    /** true = a conta nasceu agora, e a senha provisoria foi enviada. */
+    contaCriada: boolean;
+  };
+}

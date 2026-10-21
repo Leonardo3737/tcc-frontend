@@ -6,17 +6,37 @@ import type { DadosCadastroProfessor } from '../schemas/cadastro-pelo-professor.
 /**
  * Professores.
  *
- * A listagem e aberta a qualquer autenticado (nome e departamento de docente
- * sao informacao publica na instituicao) e so pagina — o backend nao oferece
- * busca aqui, entao a tela nao finge que oferece.
+ * Duas listagens com ESCOPOS DE BUSCA DIFERENTES, e a diferenca e de
+ * seguranca, nao de comodidade:
+ *
+ *  - `GET /professores` (autenticada) varre nome, e-mail, identificacao
+ *    funcional e departamento — tudo que a resposta ja entrega a quem tem
+ *    token;
+ *  - `GET /professores/publicos` varre apenas NOME e DEPARTAMENTO. Buscar por
+ *    e-mail ali permitiria a um anonimo digitar um endereco e descobrir, pelo
+ *    acerto ou pelo vazio, se ele pertence a um docente — um oraculo de
+ *    existencia, mesmo sem o endereco aparecer na resposta.
+ *
+ * Trocar uma funcao pela outra, portanto, nao e so questao de campos a menos.
  */
 export interface FiltroProfessores {
+  /** Autenticada: nome, e-mail, identificacao funcional ou departamento. */
+  busca?: string;
   pagina?: number;
   limite?: number;
 }
 
-export function listarProfessores(filtro: FiltroProfessores): Promise<RespostaPaginada<Usuario>> {
+export function listarProfessores(
+  filtro: FiltroProfessores = {},
+): Promise<RespostaPaginada<Usuario>> {
   return apiCliente.get<RespostaPaginada<Usuario>>('/professores', { query: { ...filtro } });
+}
+
+export interface FiltroProfessoresPublicos {
+  /** Publica: NOME ou DEPARTAMENTO apenas. Nunca e-mail — ver o cabecalho. */
+  busca?: string;
+  pagina?: number;
+  limite?: number;
 }
 
 /**
@@ -29,7 +49,7 @@ export function listarProfessores(filtro: FiltroProfessores): Promise<RespostaPa
  * tela com 401.
  */
 export function listarProfessoresPublicos(
-  filtro: FiltroProfessores = {},
+  filtro: FiltroProfessoresPublicos = {},
 ): Promise<RespostaPaginada<ProfessorPublico>> {
   return apiCliente.get<RespostaPaginada<ProfessorPublico>>('/professores/publicos', {
     query: { ...filtro },

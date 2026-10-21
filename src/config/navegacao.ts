@@ -10,8 +10,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-import { rotas } from './rotas';
 import { PerfilUsuario } from '@/types/dominio';
+import { rotas } from './rotas';
 
 /**
  * Itens do menu principal.
@@ -71,6 +71,17 @@ export const ITENS_NAVEGACAO: ItemNavegacao[] = [
     grupo: 'rotina',
   },
   {
+    rotulo: 'Editais de monitoria',
+    href: rotas.editais,
+    icone: ScrollText,
+    // Gerenciar edital e consultar candidaturas sao restritos a PROFESSOR no
+    // backend (@Perfis(PROFESSOR) em /editais e em /inscricoes). A inscricao em
+    // si e publica, mas ela nao vive no menu: quem se candidata nao tem conta.
+    perfis: [PerfilUsuario.PROFESSOR],
+    casaPrefixo: true,
+    grupo: 'gestao',
+  },
+  {
     rotulo: 'Cursos',
     href: rotas.cursos,
     icone: Library,
@@ -84,17 +95,6 @@ export const ITENS_NAVEGACAO: ItemNavegacao[] = [
     icone: BookOpen,
     // Só PROFESSOR cria e edita o catálogo (backend: @Perfis(PROFESSOR)).
     perfis: [PerfilUsuario.PROFESSOR],
-    grupo: 'gestao',
-  },
-  {
-    rotulo: 'Editais de monitoria',
-    href: rotas.editais,
-    icone: ScrollText,
-    // Gerenciar edital e consultar candidaturas sao restritos a PROFESSOR no
-    // backend (@Perfis(PROFESSOR) em /editais e em /inscricoes). A inscricao em
-    // si e publica, mas ela nao vive no menu: quem se candidata nao tem conta.
-    perfis: [PerfilUsuario.PROFESSOR],
-    casaPrefixo: true,
     grupo: 'gestao',
   },
   {

@@ -1,19 +1,19 @@
 'use client';
 
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/campo';
-import { Alert } from '@/components/ui/alert';
-import { CampoSenha } from './campo-senha';
-import { esquemaLogin, type DadosLogin } from '../schemas/login.schema';
-import { useLogin } from '../hooks/use-login';
-import { ApiError } from '@/lib/api/erros';
 import { rotas } from '@/config/rotas';
+import { ApiError } from '@/lib/api/erros';
+import { useLogin } from '../hooks/use-login';
+import { esquemaLogin, type DadosLogin } from '../schemas/login.schema';
+import { CampoSenha } from './campo-senha';
 
 export function FormularioLogin() {
   const parametros = useSearchParams();
@@ -108,16 +108,6 @@ export function FormularioLogin() {
         >
           Esqueceu a senha?
         </Link>
-      </p>
-
-      {/*
-        Dito na tela porque e verdade e porque tranquiliza: a sessao vive num
-        cookie httpOnly, e o token nunca fica acessivel ao JavaScript da pagina
-        (ver docs/decisoes-arquiteturais.md, AD-F01).
-      */}
-      <p className="flex items-start gap-2 text-xs text-texto-suave">
-        <ShieldCheck className="mt-px h-3.5 w-3.5 shrink-0 text-sucesso" aria-hidden />
-        Sua sessão fica protegida em um cookie seguro e expira sozinha após 8 horas.
       </p>
     </form>
   );

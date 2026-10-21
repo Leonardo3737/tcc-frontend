@@ -1,6 +1,12 @@
 import { apiCliente } from '@/lib/api/cliente';
 import type { RespostaPaginada } from '@/types/api';
-import type { InscricaoConfirmacao, InscricaoEdital, Turno } from '@/types/dominio';
+import type {
+  AprovacaoDeInscricao,
+  InscricaoConfirmacao,
+  InscricaoEdital,
+  ResumoPorDisciplina,
+  Turno,
+} from '@/types/dominio';
 
 /**
  * Candidaturas em edital.
@@ -45,9 +51,57 @@ export function listarInscricoes(
   });
 }
 
+/** Os mesmos recortes da listagem, sem o que so faz sentido numa lista paginada. */
+export type FiltroResumoInscricoes = Omit<
+  FiltroInscricoes,
+  'pagina' | 'limite' | 'ordenarPor' | 'direcao'
+>;
+
+/**
+ * Totais por disciplina, para a faixa de cartoes.
+ *
+ * Recebe os MESMOS filtros da listagem, e isso nao e opcional: sem repassar a
+ * busca, o curso e o turno ativos, o numero do cartao deixaria de bater com o
+ * conteudo da lista logo abaixo dele.
+ *
+ * NAO e paginado — o resultado e limitado pelo catalogo de disciplinas, nao
+ * pelo numero de candidatos. Por isso reordenar no cliente aqui e correto, ao
+ * contrario da listagem.
+ */
+export function resumoPorDisciplina(
+  filtro: FiltroResumoInscricoes = {},
+): Promise<ResumoPorDisciplina[]> {
+  return apiCliente.get<ResumoPorDisciplina[]>('/inscricoes/resumo', { query: { ...filtro } });
+}
+
 /** Inclui `alunoCadastrado`: de quem o professor NAO precisa criar conta. */
 export function detalharInscricao(id: string): Promise<InscricaoEdital> {
   return apiCliente.get<InscricaoEdital>(`/inscricoes/${id}`);
+}
+
+/**
+ * Aprova a candidatura: cria a monitoria e habilita o monitor.
+ *
+ * SEM CORPO — disciplina, curso, periodo e os dados da conta saem todos da
+ * inscricao. Nao ha nada para o professor redigitar, e redigitar permitiria a
+ * monitoria nascer divergente da candidatura que a originou.
+ *
+ * O responsavel pela monitoria e o professor AUTENTICADO, nao o que o
+ * candidato indicou: a RN01 exige que quem habilita seja o responsavel. A
+ * indicacao segue gravada na inscricao.
+ *
+ * NAO E ATOMICA, por decisao do backend, e isso muda o tratamento de erro
+ * aqui: os estados parciais possiveis (conta sem monitoria; monitoria sem
+ * monitor) se resolvem chamando de novo. Por isso a tela oferece tentar
+ * novamente em vez de tratar a falha como definitiva.
+ *
+ * Erros de dominio possiveis: 409 (ja e monitor — RN09; curso nao oferece a
+ * disciplina; monitoria da oferta existente fora deste edital), 400 (e-mail
+ * fora do dominio institucional exigido para criar conta) e 503 (a senha da
+ * conta nova nao pode ser entregue — nada foi criado).
+ */
+export function aprovarInscricao(id: string): Promise<AprovacaoDeInscricao> {
+  return apiCliente.post<AprovacaoDeInscricao>(`/inscricoes/${id}/aprovar`);
 }
 
 export interface DadosInscricao {

@@ -1,16 +1,19 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 
-import { Dialog, DialogConteudo } from '@/components/ui/dialog';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/campo';
-import { Alert } from '@/components/ui/alert';
+import { Dialog, DialogConteudo } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/toast';
 import { SeletorDeCursos } from '@/features/cursos/components/seletor-de-cursos';
+import { aplicarErroDeFormulario } from '@/lib/api/formulario';
+import { chaves } from '@/lib/query/chaves';
+import type { Disciplina } from '@/types/dominio';
 import { atualizarDisciplina, criarDisciplina } from '../api/disciplinas.service';
 import {
   CAMPOS_DISCIPLINA,
@@ -19,9 +22,6 @@ import {
   type DadosCriarDisciplina,
   type DadosEditarDisciplina,
 } from '../schemas/disciplina.schema';
-import { aplicarErroDeFormulario } from '@/lib/api/formulario';
-import { chaves } from '@/lib/query/chaves';
-import type { Disciplina } from '@/types/dominio';
 
 /**
  * Criacao e edicao no mesmo dialogo.
@@ -127,10 +127,9 @@ function FormularioCriacao({
 
       <Input
         label="Nome"
-        placeholder="Cálculo I"
+        placeholder="Nome da disciplina"
         autoFocus
         obrigatorio
-        ajuda="O código (ex.: CAL001) é gerado a partir do nome e não muda depois, mesmo se você renomear."
         erro={errors.nome?.message}
         {...register('nome')}
       />

@@ -11,7 +11,7 @@ import {
 import { hojeNaInstituicao, situacaoDoEdital } from '@/features/editais/situacao';
 import { itensVisiveis } from '@/config/navegacao';
 import { PerfilUsuario, Turno, type Edital, type EditalPublico } from '@/types/dominio';
-import { renderizar, usuarioTeste } from './utilitarios';
+import { abrirCombo, escolherNoCombo, renderizar, usuarioTeste } from './utilitarios';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: vi.fn(), refresh: vi.fn(), push: vi.fn(), prefetch: vi.fn() }),
@@ -62,24 +62,6 @@ function pdf(nome = 'boletim.pdf', bytes = 1024) {
   return new File([new Uint8Array(bytes)], nome, { type: 'application/pdf' });
 }
 
-/**
- * Escolhe uma opcao esperando ela EXISTIR.
- *
- * O `<select>` e renderizado antes da resposta da API, com "Carregando…" como
- * unica opcao — procurar o campo nao basta, e preciso esperar o conteudo dele.
- */
-async function escolher(
-  usuario: ReturnType<typeof userEvent.setup>,
-  rotulo: RegExp,
-  valor: string,
-) {
-  const campo = await screen.findByLabelText(rotulo);
-  await waitFor(() =>
-    expect(campo.querySelector(`option[value="${valor}"]`)).not.toBeNull(),
-  );
-  await usuario.selectOptions(campo, valor);
-  return campo;
-}
 
 /** Guarda as chamadas para afirmar URL, método e corpo. */
 function stubFetch(aoInscrever: () => Response = () => json({}, 201)) {
@@ -215,9 +197,9 @@ describe('formulario publico de inscricao', () => {
     await usuario.type(screen.getByLabelText(/nome completo/i), 'Maria Oliveira dos Santos');
     await usuario.type(screen.getByLabelText(/matr[ií]cula/i), '2021001234');
     await usuario.type(screen.getByLabelText(/^e-mail/i), 'Maria@ufx.edu.br');
-    await escolher(usuario, /^curso/i, CURSO.id);
-    await escolher(usuario, /^disciplina/i, DISCIPLINA.id);
-    await escolher(usuario, /professor respons/i, PROFESSOR.usuarioId);
+    await escolherNoCombo(usuario, /^curso$/i, new RegExp(CURSO.nome, 'i'));
+    await escolherNoCombo(usuario, /^disciplina$/i, new RegExp(DISCIPLINA.nome, 'i'));
+    await escolherNoCombo(usuario, /professor respons/i, new RegExp(PROFESSOR.nome, 'i'));
     await usuario.selectOptions(screen.getByLabelText(/^turno/i), Turno.MATUTINO);
   }
 
@@ -304,13 +286,21 @@ describe('formulario publico de inscricao', () => {
 
     renderizar(<FormularioInscricao editais={[EDITAL]} />);
 
-    await escolher(usuario, /^curso/i, CURSO.id);
-    const disciplina = await escolher(usuario, /^disciplina/i, DISCIPLINA.id);
-    expect(disciplina).toHaveValue(DISCIPLINA.id);
+    await escolherNoCombo(usuario, /^curso$/i, new RegExp(CURSO.nome, 'i'));
+    await escolherNoCombo(usuario, /^disciplina$/i, new RegExp(DISCIPLINA.nome, 'i'));
+
+    expect(await screen.findByRole('combobox', { name: /^disciplina$/i })).toHaveTextContent(
+      DISCIPLINA.nome,
+    );
 
     // Trocar o curso não pode deixar a disciplina antiga presa no formulário.
-    await escolher(usuario, /^curso/i, OUTRO_CURSO.id);
-    await waitFor(() => expect(screen.getByLabelText(/^disciplina/i)).toHaveValue(''));
+    await escolherNoCombo(usuario, /^curso$/i, new RegExp(OUTRO_CURSO.nome, 'i'));
+
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: /^disciplina$/i })).toHaveTextContent(
+        /selecione a disciplina/i,
+      ),
+    );
   });
 
   it('pede disciplinas apenas do curso escolhido', async () => {
@@ -318,10 +308,42 @@ describe('formulario publico de inscricao', () => {
     const chamadas = stubFetch();
 
     renderizar(<FormularioInscricao editais={[EDITAL]} />);
-    await escolher(usuario, /^curso/i, CURSO.id);
+    await escolherNoCombo(usuario, /^curso$/i, new RegExp(CURSO.nome, 'i'));
+    await abrirCombo(usuario, /^disciplina$/i);
 
     await waitFor(() =>
       expect(chamadas.some((c) => c.url.includes(`cursoId=${CURSO.id}`))).toBe(true),
+    );
+  });
+
+  /**
+   * `GET /professores/publicos` passou a aceitar `busca`, com escopo menor que
+   * o da rota autenticada: nome e departamento, nunca e-mail. Buscar por
+   * e-mail em rota anonima permitiria confirmar se um endereco pertence a um
+   * docente — por isso o campo tambem nao o promete no placeholder.
+   */
+  it('busca professor no servidor, sem prometer e-mail', async () => {
+    const usuario = userEvent.setup();
+    const chamadas = stubFetch();
+
+    renderizar(<FormularioInscricao editais={[EDITAL]} />);
+
+    await abrirCombo(usuario, /professor respons/i);
+    const campo = screen.getByRole('textbox', { name: /buscar em/i });
+
+    expect(campo).toHaveAttribute('placeholder', expect.stringMatching(/nome ou departamento/i));
+    expect(campo).not.toHaveAttribute('placeholder', expect.stringMatching(/e-mail/i));
+
+    await usuario.type(campo, 'computacao');
+
+    await waitFor(
+      () =>
+        expect(
+          chamadas.some(
+            (c) => c.url.includes('/professores/publicos') && c.url.includes('busca=computacao'),
+          ),
+        ).toBe(true),
+      { timeout: 3000 },
     );
   });
 

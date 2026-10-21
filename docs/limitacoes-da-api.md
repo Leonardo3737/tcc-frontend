@@ -135,7 +135,7 @@ pessoa a trocar a senha no primeiro acesso, em Minha conta".
 **Limitação residual:** o backend não tem `deveTrocarSenha`; nada obriga a troca. A tela
 **orienta**, e não finge que força.
 
-## 11. Cursos: sem filtro por curso em disciplinas, e seletor limitado a 100
+## 11. Cursos: sem a visão "disciplinas deste curso" a partir do catálogo
 
 > Registrada em 2026-10-16, ao construir o CRUD de cursos.
 
@@ -150,9 +150,11 @@ página, como todo `PaginacaoDto`). A relação N:N é mantida **pelo lado da di
    e cruzar em memória — que fica errado assim que passa de uma página. A tela de Cursos não
    oferece essa visão, em vez de oferecer uma versão que mente.
 
-2. **O seletor de cursos mostra no máximo 100 ativos.** Acima disso a lista fica incompleta, e
-   o componente diz isso em vez de deixar a pessoa procurar um curso que existe e não aparece.
-   Um `busca` dentro do seletor resolveria; hoje o volume não justifica.
+2. ~~**O seletor de cursos mostra no máximo 100 ativos.**~~ **RESOLVIDA em 2026-10-19.** Os
+   seletores de curso e de disciplina viraram `<ComboBox>`: buscam no servidor (`busca`) e
+   carregam por página sob demanda. Não há mais teto — e o filtro restaurado da URL resolve o
+   rótulo do selecionado por `GET /cursos/:id`, para o gatilho não ficar vazio quando o id
+   escolhido está numa página que nunca foi carregada.
 
 **O que o frontend faz:** o seletor pede `ativo=true` e acrescenta os cursos **já vinculados**,
 mesmo inativos. Isso não é cosmético: `cursosIds` SUBSTITUI o conjunto, então um curso
@@ -160,15 +162,37 @@ desativado que sumisse da lista seria silenciosamente desvinculado ao salvar.
 
 ---
 
-## 9. Lista de professores sem busca
+## 9. ~~Listas de professores sem busca~~ — RESOLVIDA em 2026-10-19
 
-**O que a API oferece:** `GET /professores` aceita apenas paginação (`PaginacaoDto`), ao
-contrário de `GET /alunos`, que busca por nome, matrícula ou e-mail.
+**Como era:** `GET /professores` e `GET /professores/publicos` aceitavam apenas paginação. A
+aba Professores de Pessoas não tinha campo de busca, e o seletor de professor do formulário
+público filtrava só o que já estava carregado — avisando disso, para que ninguém concluísse
+que um docente não existe quando ele apenas estava na página seguinte.
 
-**O que o frontend faz:** a aba Professores de Pessoas só pagina. Não há campo de busca,
-porque filtrar no cliente apenas a página atual esconderia resultados das outras.
+**Como ficou:** os dois endpoints aceitam `busca`, e **com escopos diferentes de propósito**:
+
+| Rota | A busca varre |
+|---|---|
+| `GET /professores` (autenticada) | nome, e-mail, identificação funcional e departamento |
+| `GET /professores/publicos` | **nome e departamento apenas** |
+
+A assimetria é de segurança, não de comodidade. `ProfessorPublicoDto` já omite o e-mail para
+não entregar endereços a um anônimo; se a busca pública aceitasse e-mail, qualquer pessoa
+poderia digitar `fulano@ufx.edu.br` e descobrir, pelo acerto ou pelo vazio, se aquele endereço
+pertence a um docente — o endereço não apareceria na resposta, mas a resposta o **confirmaria**.
+
+**O que o frontend faz:** a aba Professores ganhou busca ("nome, e-mail, SIAPE ou
+departamento"), e o seletor do formulário público busca no servidor com o placeholder
+"Buscar por nome ou departamento…" — ele não promete um campo que a rota não varre.
+
+**Consequência no código:** com todos os catálogos (`/cursos`, `/disciplinas`, `/alunos`,
+`/professores`, `/professores/publicos`) aceitando `busca`, o modo de busca local do
+`useListaParaCombo` ficou sem nenhum usuário e foi removido, junto com o aviso de busca
+parcial do `<ComboBox>`. Um ramo que nada exercita sugeriria que alguma lista ainda filtra
+em memória.
 
 ---
+
 
 ## 10. Redefinir a senha não encerra sessões já abertas
 

@@ -7,7 +7,7 @@ import { SeletorDeCurso } from '@/features/cursos/components/seletor-de-cursos';
 import { itensVisiveis } from '@/config/navegacao';
 import { rotas } from '@/config/rotas';
 import { PerfilUsuario } from '@/types/dominio';
-import { renderizar, usuarioTeste } from './utilitarios';
+import { abrirCombo, opcoesDoCombo, renderizar, usuarioTeste } from './utilitarios';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: vi.fn(), refresh: vi.fn(), push: vi.fn(), prefetch: vi.fn() }),
@@ -164,12 +164,17 @@ describe('seletor de curso', () => {
       { usuario: usuarioTeste([PerfilUsuario.ALUNO]) },
     );
 
-    const campo = await screen.findByLabelText(/^curso/i);
-    const rotulos = [...campo.querySelectorAll('option')].map((opcao) => opcao.textContent);
+    const usuario = userEvent.setup();
+    const gatilho = await abrirCombo(usuario, /^curso$/i);
 
-    expect(rotulos.join(' ')).toContain('Curso Descontinuado');
-    expect(rotulos.join(' ')).toContain('Sistemas de Informação');
-    expect(campo).toHaveValue('c-extinto');
+    // O gatilho mostra o curso atual mesmo sem ele estar entre os ativos.
+    expect(gatilho).toHaveTextContent('Curso Descontinuado');
+
+    await screen.findByRole('option', { name: /Sistemas de Informação/i });
+    const rotulos = opcoesDoCombo().join(' ');
+
+    expect(rotulos).toContain('Curso Descontinuado');
+    expect(rotulos).toContain('Sistemas de Informação');
   });
 
   it('avisa quando nao ha curso cadastrado em vez de mostrar um campo vazio', async () => {

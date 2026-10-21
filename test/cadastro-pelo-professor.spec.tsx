@@ -11,7 +11,7 @@ import { podeCadastrarUsuarios, podeListarAlunos } from '@/lib/autorizacao/capac
 import { itensVisiveis } from '@/config/navegacao';
 import { PREFIXOS_PUBLICOS, rotas } from '@/config/rotas';
 import { PerfilUsuario } from '@/types/dominio';
-import { renderizar, usuarioTeste } from './utilitarios';
+import { escolherNoCombo, renderizar, usuarioTeste } from './utilitarios';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: vi.fn(), refresh: vi.fn(), push: vi.fn(), prefetch: vi.fn() }),
@@ -170,8 +170,8 @@ describe('dialogo de cadastro de aluno', () => {
     await usuario.type(screen.getByLabelText(/e-mail/i), 'Bruno.Costa@ufx.edu.br');
     await usuario.type(screen.getByLabelText(/matr[ií]cula/i), '2022004567');
 
-    // A lista chega por requisicao; o campo so existe depois dela.
-    await usuario.selectOptions(await screen.findByLabelText(/^curso/i), CURSO.id);
+    // A lista chega por requisicao; a opcao so existe depois dela.
+    await escolherNoCombo(usuario, /^curso$/i, new RegExp(CURSO.nome, 'i'));
   }
 
   it('envia so os campos do DTO e mostra os dados de acesso com a orientacao', async () => {

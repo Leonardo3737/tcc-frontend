@@ -84,6 +84,7 @@ export function PainelPessoas() {
         />
       ) : (
         <ListaProfessores
+          busca={obter('busca')}
           pagina={pagina}
           aoFiltrar={definir}
           carregandoUrl={pendente}
@@ -191,17 +192,19 @@ function ListaAlunos({
 }
 
 function ListaProfessores({
+  busca,
   pagina,
   aoFiltrar,
   carregandoUrl,
   aoCadastrar,
 }: {
+  busca: string;
   pagina: number;
   aoFiltrar: Definir;
   carregandoUrl: boolean;
   aoCadastrar: () => void;
 }) {
-  const filtro = { pagina, limite: 20 };
+  const filtro = { busca: busca || undefined, pagina, limite: 20 };
 
   const consulta = useQuery({
     queryKey: chaves.professores.lista(filtro),
@@ -210,7 +213,20 @@ function ListaProfessores({
 
   return (
     <div className="space-y-3">
-      {/* GET /professores nao aceita busca: a lista so pagina. */}
+      {/*
+        A busca autenticada varre nome, e-mail, identificação funcional e
+        departamento — tudo que esta lista já exibe. A pública, usada no
+        formulário de inscrição, cobre menos de propósito.
+      */}
+      <CampoBusca
+        valorInicial={busca}
+        aoBuscar={(termo) => aoFiltrar({ busca: termo, pagina: undefined })}
+        placeholder="Buscar por nome, e-mail, SIAPE ou departamento…"
+        rotulo="Buscar professores"
+        carregando={carregandoUrl || consulta.isFetching}
+        className="sm:max-w-md"
+      />
+
       <ResultadoLista
         consulta={consulta}
         carregandoUrl={carregandoUrl}
@@ -222,8 +238,13 @@ function ListaProfessores({
         }
         vazio={
           <EstadoVazio
-            ilustracao="pessoas"
-            titulo="Nenhum outro professor cadastrado"
+            ilustracao={busca ? 'busca' : 'pessoas'}
+            titulo={busca ? 'Nenhum professor encontrado' : 'Nenhum outro professor cadastrado'}
+            {...(busca
+              ? {
+                  descricao: `Nada corresponde a “${busca}”. Se a pessoa ainda não tem conta, cadastre-a.`,
+                }
+              : {})}
             acao={
               <Button variante="secundaria" onClick={aoCadastrar}>
                 Cadastrar professor

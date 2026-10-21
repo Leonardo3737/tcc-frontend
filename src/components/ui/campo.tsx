@@ -1,4 +1,4 @@
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ChevronsUpDown } from 'lucide-react';
 import {
   forwardRef,
   useId,
@@ -57,10 +57,10 @@ function EnvelopeCampo({
   children: ReactNode;
 }) {
   return (
-    // `space-y-1.5` separa rotulo, controle e mensagem. Sem isto os tres ficam
     // colados e o campo parece um bloco unico — o texto de ajuda, em especial,
-    // se confunde com o valor digitado.
-    <div className={cn(className)}>
+    // se confunde com o valor digitado. E o mesmo espacamento do <ComboBox>:
+    // sem ele, um select e um combobox lado a lado nao se alinham.
+    <div className={cn('', className)}>
       <label htmlFor={idControle} className="block text-sm font-semibold text-texto">
         {label}
         {obrigatorio && (
@@ -194,12 +194,18 @@ export interface SelectProps
 }
 
 /**
- * Select nativo, por decisao.
+ * Select nativo, por decisao — com a aparencia do <ComboBox>.
  *
- * Um combobox customizado (Radix Select e afins) so se justificaria com busca
- * dentro da lista ou opcao com layout rico. Para escolher modalidade, papel ou
- * status, o `<select>` nativo ganha: abre o seletor do sistema no celular,
- * funciona com teclado sem codigo nosso e nao adiciona dependencia.
+ * O ELEMENTO continua nativo: para escolher modalidade, turno, papel ou
+ * status, ele abre o seletor do sistema no celular, funciona com teclado sem
+ * codigo nosso e nao adiciona dependencia. Trocar isso por um menu customizado
+ * so se justifica quando ha busca dentro da lista ou opcao com layout rico —
+ * que e exatamente o caso do <ComboBox>, e nao deste.
+ *
+ * O que foi padronizado e so a APARENCIA: mesma moldura, mesmo espacamento,
+ * mesmo icone e mesma cor de "nada escolhido". Dois controles com a mesma
+ * funcao visual — escolher de uma lista — nao deveriam parecer componentes
+ * diferentes so porque um precisa de busca e o outro nao.
  */
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
   { label, erro, ajuda, obrigatorio, className, id, opcoes, placeholder, ...props },
@@ -221,22 +227,37 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
       idAjuda={idAjuda}
       className={className}
     >
-      <select
-        ref={ref}
-        id={idControle}
-        aria-invalid={erro ? true : undefined}
-        aria-describedby={erro ? idErro : ajuda ? idAjuda : undefined}
-        aria-required={obrigatorio || undefined}
-        className={cn(classesControle(Boolean(erro)), 'alvo-toque')}
-        {...props}
-      >
-        {placeholder && <option value="">{placeholder}</option>}
-        {opcoes.map((opcao) => (
-          <option key={opcao.valor} value={opcao.valor}>
-            {opcao.rotulo}
-          </option>
-        ))}
-      </select>
+      {/*
+        `relative` + icone absoluto, como o <ComboBox> faz. `pr-9` abre espaco
+        para ele: sem isso uma opcao longa passaria por baixo do icone.
+      */}
+      <div className="relative">
+        <select
+          ref={ref}
+          id={idControle}
+          aria-invalid={erro ? true : undefined}
+          aria-describedby={erro ? idErro : ajuda ? idAjuda : undefined}
+          aria-required={obrigatorio || undefined}
+          className={cn(classesControle(Boolean(erro)), 'alvo-toque select-padrao pr-9')}
+          {...props}
+        >
+          {placeholder && <option value="">{placeholder}</option>}
+          {opcoes.map((opcao) => (
+            <option key={opcao.valor} value={opcao.valor}>
+              {opcao.rotulo}
+            </option>
+          ))}
+        </select>
+
+        {/*
+          `pointer-events-none`: o clique precisa alcancar o <select>, senao
+          tocar a seta — que e onde as pessoas clicam — nao abriria a lista.
+        */}
+        <ChevronsUpDown
+          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-texto-suave"
+          aria-hidden
+        />
+      </div>
     </EnvelopeCampo>
   );
 });

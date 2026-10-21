@@ -44,8 +44,11 @@ export const chaves = {
     raiz: ['inscricoes'] as const,
     lista: (filtro: Record<string, unknown>) => ['inscricoes', 'lista', filtro] as const,
     detalhe: (id: string) => ['inscricoes', id] as const,
-    /** Maior media do edital, para o atalho do primeiro colocado. */
-    topo: (editalId: string) => ['inscricoes', 'topo', editalId] as const,
+    /**
+     * Totais por disciplina. O filtro inteiro entra na chave porque o resumo
+     * responde ao mesmo recorte da lista — busca e turno mudam os numeros.
+     */
+    resumo: (filtro: Record<string, unknown>) => ['inscricoes', 'resumo', filtro] as const,
   },
 
   professoresPublicos: ['professores', 'publicos'] as const,
