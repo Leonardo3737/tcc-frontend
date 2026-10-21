@@ -90,6 +90,7 @@ export interface Capacidades {
   publicarMaterial: boolean;
   verIndicadores: boolean;
   verDesempenhoMonitores: boolean;
+  baixarRelatorioDaMonitoria: boolean;
   sairDaMonitoria: boolean;
 }
 
@@ -126,6 +127,19 @@ export function capacidades(contexto: ContextoMonitoria): Capacidades {
 
     // professorResponsavel NEGADO: o professor nao tem agenda de monitor
     declararDisponibilidade: monitor && aberta,
+
+    /**
+     * Relatorio final: so o MONITOR, e o professor responsavel e NEGADO.
+     *
+     * Espelha `{ papeis: [MONITOR], professorResponsavel: 'NEGADO' }` da rota.
+     * O documento e PESSOAL — o professor o assina como orientador no fim, mas
+     * ele nao e dele; e com varios monitores na mesma monitoria, "o relatorio
+     * do professor" nem existiria sem escolher de qual monitor.
+     *
+     * Sem `aberta`: o relatorio final e justamente o que se baixa quando a
+     * monitoria termina.
+     */
+    baixarRelatorioDaMonitoria: monitor,
     agendarAtendimento: participa && ativa,
 
     inscreverEmSessao: monitorado && ativa,

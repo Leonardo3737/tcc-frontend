@@ -20,6 +20,7 @@ import {
   Indicador,
   SkeletonFaixaIndicadores,
 } from '@/components/comum/indicador';
+import { formatarDuracaoEmMinutos } from '@/lib/datas/fuso';
 import { buscarAtividadeMonitores, buscarIndicadoresMonitoria } from '../api/analytics.service';
 import { useContextoMonitoria } from '@/providers/monitoria-provider';
 import { chaves } from '@/lib/query/chaves';
@@ -147,6 +148,8 @@ export function PainelIndicadoresMonitoria() {
                     <TabelaLinha>
                       <TabelaCabecalhoCelula>Monitor</TabelaCabecalhoCelula>
                       <TabelaCabecalhoCelula>Realizados</TabelaCabecalhoCelula>
+                      {/* Ao lado de "Realizados": é a mesma pergunta, em tempo. */}
+                      <TabelaCabecalhoCelula>Carga horária</TabelaCabecalhoCelula>
                       <TabelaCabecalhoCelula>Agendados</TabelaCabecalhoCelula>
                       <TabelaCabecalhoCelula>Cancelados</TabelaCabecalhoCelula>
                       <TabelaCabecalhoCelula>Alunos</TabelaCabecalhoCelula>
@@ -160,6 +163,9 @@ export function PainelIndicadoresMonitoria() {
                       <TabelaLinha key={monitor.participanteId}>
                         <TabelaCelula className="font-medium">{monitor.nome}</TabelaCelula>
                         <TabelaCelula>{monitor.atendimentosRealizados}</TabelaCelula>
+                        <TabelaCelula className="tabular-nums">
+                          {formatarDuracaoEmMinutos(monitor.cargaHorariaMinutos)}
+                        </TabelaCelula>
                         <TabelaCelula>{monitor.atendimentosAgendados}</TabelaCelula>
                         <TabelaCelula>{monitor.atendimentosCancelados}</TabelaCelula>
                         <TabelaCelula>{monitor.alunosAtendidos}</TabelaCelula>
@@ -176,7 +182,7 @@ export function PainelIndicadoresMonitoria() {
                 </Tabela>
               </div>
 
-              {/* Sete colunas não cabem em 375px: no mobile vira cartão. */}
+              {/* Oito colunas não cabem em 375px: no mobile vira cartão. */}
               <ul className="divide-y divide-borda md:hidden">
                 {monitores.data.map((monitor) => (
                   <li key={monitor.participanteId} className="space-y-2 p-4">
@@ -186,6 +192,12 @@ export function PainelIndicadoresMonitoria() {
                       <div className="flex justify-between gap-2">
                         <dt className="text-texto-suave">Realizados</dt>
                         <dd className="text-texto">{monitor.atendimentosRealizados}</dd>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <dt className="text-texto-suave">Carga horária</dt>
+                        <dd className="tabular-nums text-texto">
+                          {formatarDuracaoEmMinutos(monitor.cargaHorariaMinutos)}
+                        </dd>
                       </div>
                       <div className="flex justify-between gap-2">
                         <dt className="text-texto-suave">Agendados</dt>

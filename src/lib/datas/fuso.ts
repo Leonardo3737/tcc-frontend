@@ -113,3 +113,23 @@ export function formatarDataSimples(data: string): string {
   const [ano, mes, dia] = data.split('-');
   return ano && mes && dia ? `${dia}/${mes}/${ano}` : data;
 }
+
+/**
+ * Duracao acumulada, a partir de MINUTOS.
+ *
+ * O backend manda minutos como unidade canonica justamente porque hora decimal
+ * nao representa 1h20 sem dizima — e "21,08 h" nao e um numero que alguem leia
+ * como tempo trabalhado. Aqui ele vira "21 h 05", que e como se preenche um
+ * relatorio de carga horaria.
+ */
+export function formatarDuracaoEmMinutos(minutos: number): string {
+  if (!Number.isFinite(minutos) || minutos <= 0) return '0 h';
+
+  const horas = Math.floor(minutos / 60);
+  const resto = Math.round(minutos % 60);
+
+  if (horas === 0) return `${resto} min`;
+  if (resto === 0) return `${horas} h`;
+
+  return `${horas} h ${String(resto).padStart(2, '0')}`;
+}
