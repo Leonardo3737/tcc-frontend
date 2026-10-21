@@ -175,3 +175,22 @@ export function promoverAMonitor(
     `/monitorias/${monitoriaId}/participantes/${participanteId}/promover-a-monitor`,
   );
 }
+
+/**
+ * URL do relatorio final da monitoria, em .docx.
+ *
+ * E um LINK, nao um `fetch`: o corpo e binario e o cliente HTTP deste projeto
+ * interpreta toda resposta como JSON — baixar por ele entregaria um arquivo
+ * corrompido. Como link, o navegador faz o download direto, o cookie httpOnly
+ * acompanha (mesma origem) e o backend confere o vinculo de MONITOR.
+ *
+ * O nome do arquivo vem do servidor, no `Content-Disposition`. Por isso o
+ * `<a>` NAO leva `download`: esse atributo faria o navegador renomear o
+ * arquivo com o ultimo segmento da URL ("relatorio"), descartando o nome que o
+ * backend monta com disciplina, periodo e matricula.
+ *
+ * Nao e link publico: sem sessao de MONITOR o backend recusa com 403.
+ */
+export function urlDoRelatorio(monitoriaId: string): string {
+  return `/api/backend/monitorias/${monitoriaId}/relatorio`;
+}

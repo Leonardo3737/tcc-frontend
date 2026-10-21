@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { BadgePapel, BadgeResponsavel, BadgeStatusMonitoria } from '@/components/ui/badge';
 import { SeloDisciplina } from '@/components/comum/selo-disciplina';
 import { AcoesStatusMonitoria } from './acoes-status-monitoria';
+import { BotaoRelatorioMonitoria } from './botao-relatorio';
 import { useContextoMonitoria } from '@/providers/monitoria-provider';
 import { rotas } from '@/config/rotas';
 import { cn } from '@/lib/utils';
@@ -100,7 +101,14 @@ export function CabecalhoMonitoria() {
           </div>
         </div>
 
-        <AcoesStatusMonitoria />
+        {/*
+          Os dois nunca aparecem juntos: ações de status são do professor
+          responsável, o relatório é do monitor.
+        */}
+        <div className="flex flex-wrap items-center gap-2">
+          <BotaoRelatorioMonitoria />
+          <AcoesStatusMonitoria />
+        </div>
       </div>
 
       <nav aria-label="Seções da monitoria">

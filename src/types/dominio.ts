@@ -477,6 +477,19 @@ export interface AtividadeMonitor {
   atendimentosCancelados: number;
   atendimentosAgendados: number;
   alunosAtendidos: number;
+  /**
+   * Soma de (fim - inicio) dos atendimentos REALIZADOS, em minutos.
+   *
+   * O MINUTO e a unidade canonica, nao a hora: hora decimal nao representa
+   * 1h20 sem dizima. `cargaHorariaHoras` vem junto por conveniencia, mas
+   * qualquer conta deve partir dos minutos.
+   *
+   * AGENDADO e CANCELADO nao entram. A soma e de intervalos disjuntos — a
+   * constraint EXCLUDE do banco impede sobreposicao entre atendimentos
+   * contaveis do mesmo monitor —, entao nao ha tempo contado em dobro.
+   */
+  cargaHorariaMinutos: number;
+  cargaHorariaHoras: number;
   totalAvaliacoes: number;
   mediaAvaliacoes: number | null;
   disponibilidadesAtivas: number;
