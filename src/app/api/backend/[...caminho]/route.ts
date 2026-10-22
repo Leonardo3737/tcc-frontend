@@ -113,11 +113,14 @@ async function encaminhar(requisicao: NextRequest, caminho: string[]): Promise<N
      * superficie de execucao de conteudo de terceiro. Descarta-lo aqui
      * desfazia essa decisao em silencio.
      *
+     * `x-total-inscricoes` acompanha a exportacao: o corpo e binario, entao e
+     * a unica forma de a tela dizer quantas linhas vieram sem abrir o arquivo.
+     *
      * A lista e fechada e nao uma copia de tudo: repassar cabecalhos do
      * backend as cegas (ex.: `set-cookie`) daria a ele poder sobre a sessao
      * que esta camada existe justamente para controlar.
      */
-    for (const cabecalho of ['content-type', 'content-disposition']) {
+    for (const cabecalho of ['content-type', 'content-disposition', 'x-total-inscricoes']) {
       const valor = resposta.headers.get(cabecalho);
       if (valor) resultado.headers.set(cabecalho, valor);
     }

@@ -347,6 +347,52 @@ demais sessões.
 
 ---
 
+## AD-F16 — Download binário: link quando não há erro, blob quando há
+
+**Contexto.** Três rotas respondem **bytes**, não JSON: o boletim do candidato (PDF), o
+relatório final do monitor (.docx) e a exportação das inscrições (.xlsx). O `apiCliente`
+interpreta toda resposta como JSON, então nenhuma delas pode passar por ele — fazer isso
+entrega arquivo corrompido.
+
+**Decisão.** Duas formas, escolhidas pelo **caminho de erro** da rota, não pelo tipo do
+arquivo.
+
+| Rota | Forma | Por quê |
+|---|---|---|
+| `GET /inscricoes/:id/boletim` | `<a href>` | Só falha por sessão inválida ou arquivo inexistente — nada que o professor resolva na tela |
+| `GET /monitorias/:id/relatorio` | `<a href>` | Idem; o vínculo de MONITOR já decide se o botão aparece |
+| `GET /inscricoes/exportar` | `baixarArquivo` (fetch + blob) | **Recusa com 409** acima de 5.000 linhas, em vez de truncar |
+
+Um `<a href>` nesse 409 levaria o navegador a **sair da tela** e exibir o JSON cru do erro
+— a pessoa perderia os filtros que montou e ainda leria uma mensagem de máquina. Por isso
+a exportação lê a resposta por `fetch`, converte em blob e, quando o status não é 2xx,
+levanta o mesmo `ApiError` do resto da aplicação: a mensagem do backend ("refine os
+filtros") aparece inline, na tela, com os filtros intactos.
+
+**O nome do arquivo é do servidor.** Vem no `Content-Disposition`, montado com período,
+disciplina e matrícula. Nas três rotas. O `<a>` do boletim e do relatório **não** leva
+`download` (o atributo renomearia o arquivo para o último segmento da URL), e
+`baixarArquivo` lê o cabeçalho em vez de inventar um nome — duas convenções divergiriam na
+primeira mudança do backend.
+
+**O proxy precisou colaborar.** `src/app/api/backend/[...caminho]/route.ts` repassa corpo
+e resposta como `ArrayBuffer`; com `.text()` os bytes viravam U+FFFD e o arquivo chegava
+corrompido nos dois sentidos. E sua lista fechada de cabeçalhos repassados inclui
+`content-disposition` e `x-total-inscricoes` — descartá-los perderia, respectivamente, o
+nome do arquivo e a contagem de linhas, que num corpo binário é a única forma de a tela
+confirmar o que saiu.
+
+**A contagem ausente é `null`, nunca zero.** `Number(null)` é `0`: tratar o cabeçalho
+faltante como número faria a tela anunciar "0 inscrições exportadas" logo após entregar
+uma planilha cheia. Sem o cabeçalho, a confirmação não cita número.
+
+**O recorte exportado é o da tela.** A exportação envia os mesmos filtros e a mesma
+ordenação da listagem — o backend monta o `WHERE` pelo mesmo método. Exportar "tudo"
+enquanto a tela mostra um recorte entregaria à banca uma lista diferente da que foi
+conferida, e a divergência só apareceria na reunião.
+
+---
+
 ## O que foi deliberadamente NÃO feito
 
 | Item | Motivo |
