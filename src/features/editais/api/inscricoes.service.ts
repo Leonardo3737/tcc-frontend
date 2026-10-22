@@ -1,4 +1,5 @@
 import { apiCliente } from '@/lib/api/cliente';
+import { baixarArquivo } from '@/lib/api/download';
 import type { RespostaPaginada } from '@/types/api';
 import type {
   AprovacaoDeInscricao,
@@ -72,6 +73,58 @@ export function resumoPorDisciplina(
   filtro: FiltroResumoInscricoes = {},
 ): Promise<ResumoPorDisciplina[]> {
   return apiCliente.get<ResumoPorDisciplina[]>('/inscricoes/resumo', { query: { ...filtro } });
+}
+
+/**
+ * Recorte da exportacao.
+ *
+ * `editalId` e OBRIGATORIO aqui, e e a unica divergencia em relacao a
+ * listagem: planilha que mistura editais poe candidatos de processos
+ * seletivos diferentes na mesma coluna "Media" — justamente a coluna pela qual
+ * a banca decide.
+ *
+ * Sem paginacao: a exportacao devolve todas as linhas do recorte.
+ */
+export type FiltroExportacaoInscricoes = Omit<
+  FiltroInscricoes,
+  'pagina' | 'limite' | 'editalId'
+> & { editalId: string };
+
+/**
+ * Exporta as inscricoes do recorte em .xlsx.
+ *
+ * Passa pelo `baixarArquivo` e nao por um `<a href>` — ao contrario do boletim
+ * e do relatorio — porque esta rota TEM caminho de erro realista: acima do
+ * teto de linhas ela recusa com 409 em vez de entregar planilha truncada, e um
+ * link levaria o navegador a uma pagina de JSON cru no lugar do arquivo.
+ *
+ * Recebe os MESMOS filtros da listagem, de propósito: a planilha precisa
+ * conter exatamente o que a tela mostra. Exportar "tudo" enquanto a tela
+ * mostra um recorte entregaria à reunião uma lista diferente da que foi
+ * conferida.
+ *
+ * `X-Total-Inscricoes` vem no cabecalho porque o corpo e binario; e com ele
+ * que a tela confirma quantas linhas sairam.
+ */
+export async function exportarInscricoes(
+  filtro: FiltroExportacaoInscricoes,
+): Promise<{ nomeDoArquivo: string; total: number | null }> {
+  const { nomeDoArquivo, cabecalhos } = await baixarArquivo('/inscricoes/exportar', {
+    query: { ...filtro },
+    nomePadrao: 'inscricoes.xlsx',
+  });
+
+  /**
+   * `null` significa "nao sei", nunca zero.
+   *
+   * `Number(null)` e 0, e um cabecalho ausente — um proxy que o descarte —
+   * faria a tela anunciar "0 inscricoes exportadas" logo depois de entregar
+   * uma planilha cheia. Contagem errada e pior do que contagem nenhuma.
+   */
+  const cabecalho = cabecalhos.get('x-total-inscricoes');
+  const total = cabecalho === null ? Number.NaN : Number(cabecalho);
+
+  return { nomeDoArquivo, total: Number.isFinite(total) ? total : null };
 }
 
 /** Inclui `alunoCadastrado`: de quem o professor NAO precisa criar conta. */

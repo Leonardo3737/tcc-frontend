@@ -5,6 +5,7 @@ import {
   ArrowDown,
   ArrowUp,
   Download,
+  Sheet,
   FileX2,
   Trophy,
   UserCheck,
@@ -41,6 +42,7 @@ import { useSessao } from '@/providers/sessao-provider';
 import { Turno, type Edital, type InscricaoEdital } from '@/types/dominio';
 import {
   aprovarInscricao,
+  exportarInscricoes,
   listarInscricoes,
   resumoPorDisciplina,
   urlDoBoletim,
@@ -89,6 +91,7 @@ export function ListaInscricoes({
   const { obter, obterNumero, definir, pendente } = useFiltrosUrl();
   const [detalhe, setDetalhe] = useState<InscricaoEdital | null>(null);
   const [erroAprovacao, setErroAprovacao] = useState<string | null>(null);
+  const [erroExportacao, setErroExportacao] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const busca = obter('busca');
@@ -205,6 +208,41 @@ export function ListaInscricoes({
     onError: (erro) => setErroAprovacao(mensagemDeErro(erro)),
   });
 
+  /**
+   * Exportacao em planilha.
+   *
+   * O arquivo e binario e esta rota tem erro de dominio (409 acima do teto de
+   * linhas), entao passa por `exportarInscricoes` — que le o blob — e nao por
+   * um link, que mostraria JSON cru no lugar do download.
+   */
+  const exportar = useMutation({
+    mutationFn: () =>
+      exportarInscricoes({
+        editalId: edital.id,
+        busca: busca || undefined,
+        cursoId: cursoId || undefined,
+        disciplinaId: disciplinaId || undefined,
+        turno: (turno || undefined) as Turno | undefined,
+        ordenarPor,
+        direcao,
+      }),
+
+    onSuccess: ({ total }) => {
+      setErroExportacao(null);
+      toast.sucesso(
+        'Planilha baixada',
+        total === null
+          ? 'A exportação foi concluída.'
+          : total === 1
+            ? '1 inscrição exportada.'
+            : `${total} inscrições exportadas.`,
+      );
+    },
+
+    onError: (erro) => setErroExportacao(mensagemDeErro(erro)),
+  });
+
+  const semCandidaturas = consulta.isSuccess && consulta.data.meta.total === 0;
   const temFiltro = Boolean(busca || cursoId || disciplinaId || turno);
 
   const limpar = () =>
@@ -236,7 +274,7 @@ export function ListaInscricoes({
         aoEscolher={(nova) => filtrar({ disciplina: nova })}
       />
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+      <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
         <CampoBusca
           valorInicial={busca}
           aoBuscar={(termo) => filtrar({ busca: termo })}
@@ -252,14 +290,14 @@ export function ListaInscricoes({
           por quê.
         */}
         <FiltroDeCurso
-          className="lg:w-52"
+          className="shrink-0 lg:w-52"
           valor={cursoId}
           aoMudar={(novo) => filtrar({ curso: novo, disciplina: undefined })}
         />
 
         <Select
           label="Turno"
-          className="lg:w-40 [&>label]:sr-only"
+          className="shrink-0 lg:w-40 [&>label]:sr-only"
           value={turno}
           onChange={(evento) => filtrar({ turno: evento.target.value })}
           opcoes={[
@@ -272,11 +310,38 @@ export function ListaInscricoes({
         />
 
         {temFiltro && (
-          <Button variante="fantasma" tamanho="sm" onClick={limpar}>
+          <Button variante="fantasma" tamanho="sm" className="shrink-0" onClick={limpar}>
             Limpar filtros
           </Button>
         )}
+
+        {/*
+          A exportação leva os filtros ATIVOS, não o edital inteiro: a planilha
+          precisa conter exatamente o que está na tela. Entregar à reunião uma
+          lista diferente da que foi conferida é pior do que não exportar.
+        */}
+        <Button
+          variante="secundaria"
+          onClick={() => exportar.mutate()}
+          carregando={exportar.isPending}
+          disabled={exportar.isPending || semCandidaturas}
+          className="shrink-0 lg:ml-auto"
+          iconeEsquerda={<Sheet className="h-4 w-4" aria-hidden />}
+        >
+          {exportar.isPending ? 'Gerando…' : 'Exportar'}
+        </Button>
       </div>
+
+      {/*
+        O erro da exportação fica NA TELA, não num toast: o caso real é o teto
+        de linhas (409), e a mensagem diz o que fazer — filtrar para reduzir o
+        recorte. Um aviso que some não deixaria ler isso.
+      */}
+      {erroExportacao && (
+        <Alert tom="erro" titulo="Não foi possível exportar">
+          {erroExportacao}
+        </Alert>
+      )}
 
       {/* Ordenação em botões no mobile: os cabeçalhos da tabela não existem lá. */}
       <div className="flex flex-wrap items-center gap-2 md:hidden">
