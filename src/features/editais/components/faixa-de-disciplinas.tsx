@@ -1,10 +1,29 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Trophy } from 'lucide-react';
 
+import { CampoBusca } from '@/components/comum/campo-busca';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { ResumoPorDisciplina } from '@/types/dominio';
+
+/**
+ * A partir de quantas disciplinas a busca aparece.
+ *
+ * Com meia duzia de cartoes, procurar e olhar: um campo de busca ali so
+ * acrescentaria um controle a uma tela que ja resolve. O campo surge quando a
+ * faixa deixa de caber de uma vez na tela.
+ */
+const MINIMO_PARA_BUSCAR = 8;
+
+/** Compara ignorando acento e caixa — ninguem digita "Cálculo" com o acento. */
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
+}
 
 /**
  * Panorama do edital por disciplina, que tambem e o seletor.
@@ -17,10 +36,16 @@ import type { ResumoPorDisciplina } from '@/types/dominio';
  * abaixo nao muda de natureza — continua com busca, ordenacao e paginacao do
  * servidor —, o cartao so define um recorte que ja existia.
  *
- * Por que cartoes e nao abas: abas nao cabem quando o edital tem dez
- * disciplinas, e escondem justamente o que este endpoint existe para mostrar —
- * onde ha poucos candidatos, onde ninguem tem nota. Aqui o panorama fica
- * visivel o tempo todo.
+ * Por que cartoes e nao abas: a aba mostra so o rotulo, e esconde justamente
+ * o que este endpoint existe para dizer — onde ha poucos candidatos, onde
+ * ninguem tem nota, onde a monitoria ficou sem monitor. O cartao carrega esses
+ * numeros, entao o panorama fica visivel sem clicar em nada.
+ *
+ * A faixa e UMA linha com rolagem horizontal, nunca quebrada em varias. Um
+ * edital real chegou a 84 disciplinas: quebrada, a faixa tomava a tela inteira
+ * e empurrava a lista de candidatos — o trabalho de verdade — para fora da
+ * dobra. Em uma linha ela custa altura fixa, seja o edital de 3 ou de 300
+ * disciplinas, e procurar uma especifica e trabalho da busca, nao do olho.
  */
 export function FaixaDeDisciplinas({
   resumo,
@@ -39,6 +64,21 @@ export function FaixaDeDisciplinas({
   totalGeral: number;
   aoEscolher: (disciplinaId: string) => void;
 }) {
+  const [termo, setTermo] = useState('');
+  const faixa = useRef<HTMLDivElement>(null);
+
+  /**
+   * Traz o cartao selecionado para a vista.
+   *
+   * Em uma linha so, a disciplina escolhida pode estar a dezenas de cartoes
+   * da borda. Chegando por URL (`?disciplina=`) ela ficaria fora da tela, e a
+   * listagem abaixo pareceria sem recorte nenhum — o oposto do que acontece.
+   */
+  useEffect(() => {
+    const alvo = faixa.current?.querySelector('[aria-checked="true"]');
+    alvo?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }, [disciplinaId, termo]);
+
   if (carregando) {
     return (
       <div className="flex gap-3 overflow-hidden" aria-busy aria-label="Carregando disciplinas">
@@ -68,17 +108,64 @@ export function FaixaDeDisciplinas({
     a.disciplina.codigo.localeCompare(b.disciplina.codigo, 'pt-BR'),
   );
 
+  const procurado = normalizar(termo.trim());
+
+  /**
+   * O cartao SELECIONADO nunca e filtrado para fora.
+   *
+   * Sem isso, digitar algo que nao case com a disciplina escolhida tiraria o
+   * unico indicador visivel do recorte, e a listagem abaixo apareceria
+   * encurtada sem nada na tela explicando por que.
+   */
+  const visiveis = procurado
+    ? ordenado.filter(
+        (linha) =>
+          linha.disciplina.id === disciplinaId ||
+          normalizar(linha.disciplina.codigo).includes(procurado) ||
+          normalizar(linha.disciplina.nome).includes(procurado),
+      )
+    : ordenado;
+
   return (
     <div>
-      <h3 className='font-semibold text-[1.2rem] mb-2'>Disciplinas</h3>
+      <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="text-[1.2rem] font-semibold">Disciplinas</h3>
+
+        {ordenado.length >= MINIMO_PARA_BUSCAR && (
+          <CampoBusca
+            valorInicial={termo}
+            aoBuscar={setTermo}
+            /*
+              Sem espera: o debounce de `CampoBusca` existe para nao gastar o
+              rate limit do backend a cada tecla. Aqui o resumo inteiro ja
+              esta em memoria, e atrasar so faria o filtro parecer travado.
+            */
+            atrasoMs={0}
+            placeholder="Busque a disciplina…"
+            rotulo="Buscar disciplina"
+            className="sm:w-72"
+          />
+        )}
+      </div>
+
       {/*
-        `group` de rádio: são opções mutuamente exclusivas de um mesmo recorte,
-        não botões soltos. É isso que faz o leitor de tela anunciar "2 de 5".
+        UMA linha, com rolagem horizontal — nunca quebrando em varias.
+
+        Com 84 disciplinas a faixa quebrada ocupava a tela inteira e empurrava
+        a lista de candidatos, que e o trabalho de verdade, para fora da
+        dobra. Em uma linha o panorama custa altura fixa, independente do
+        tamanho do edital, e quem procura uma disciplina especifica usa a
+        busca em vez de varrer a parede com os olhos.
+
+        `group` de radio: sao opcoes mutuamente exclusivas de um mesmo
+        recorte, nao botoes soltos. E isso que faz o leitor de tela anunciar
+        "2 de 5".
       */}
       <div
+        ref={faixa}
         role="radiogroup"
         aria-label="Filtrar candidaturas por disciplina"
-        className="flex gap-3 overflow-x-auto pb-1 rolagem-discreta sm:flex-wrap sm:overflow-visible"
+        className="flex gap-3 overflow-x-auto pb-2 rolagem-faixa"
       >
         <Cartao
           titulo="Todas"
@@ -93,7 +180,7 @@ export function FaixaDeDisciplinas({
           </p>
         </Cartao>
 
-        {ordenado.map((linha) => (
+        {visiveis.map((linha) => (
           <Cartao
             key={linha.disciplina.id}
             titulo={linha.disciplina.codigo}
@@ -135,12 +222,21 @@ export function FaixaDeDisciplinas({
       </div>
 
       {/*
-        O edital não declara as disciplinas que oferece, então esta faixa é o
-        que CHEGOU, não o que foi ofertado. Dizer isso evita a leitura de que
-        uma disciplina ausente não faz parte do edital.
+        Duas coisas diferentes, e a busca tem precedencia: quem acabou de
+        digitar precisa saber o que o termo alcancou, nao reler a nota de
+        rodape.
+
+        A nota fixa existe porque o edital nao declara as disciplinas que
+        oferece — esta faixa e o que CHEGOU, nao o que foi ofertado. Dizer
+        isso evita a leitura de que uma disciplina ausente nao faz parte do
+        edital.
       */}
-      <p className="mt-2 text-xs text-texto-suave">
-        Apenas disciplinas que receberam candidatura aparecem aqui.
+      <p className="mt-1 text-xs text-texto-suave" aria-live="polite">
+        {procurado
+          ? visiveis.length === 0
+            ? `Nenhuma disciplina corresponde a “${termo.trim()}”.`
+            : `${visiveis.length} de ${ordenado.length} disciplinas correspondem a “${termo.trim()}”.`
+          : 'Apenas disciplinas que receberam candidatura aparecem aqui.'}
       </p>
     </div>
   );

@@ -138,6 +138,45 @@
   .rolagem-discreta::-webkit-scrollbar {
     display: none;
   }
+
+  /*
+   * Rolagem da faixa de disciplinas.
+   *
+   * A faixa e UMA linha so. Num edital com 84 disciplinas, a barra e a unica
+   * pista de que a lista continua a direita — escondida, a faixa parece
+   * apenas cortada na borda e ninguem procura o resto.
+   *
+   * Em tela de toque ela some: ali arrastar e o gesto natural, a barra nao
+   * seria interativa e so ocuparia altura. O criterio e o PONTEIRO, nao a
+   * largura — um tablet largo continua sendo toque.
+   */
+  .rolagem-faixa {
+    scrollbar-width: none;
+  }
+  .rolagem-faixa::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .rolagem-faixa {
+      scrollbar-width: thin;
+      scrollbar-color: rgb(var(--cor-borda-forte)) transparent;
+    }
+    .rolagem-faixa::-webkit-scrollbar {
+      display: block;
+      height: 0.5rem;
+    }
+    .rolagem-faixa::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .rolagem-faixa::-webkit-scrollbar-thumb {
+      border-radius: 9999px;
+      background-color: rgb(var(--cor-borda-forte));
+    }
+    .rolagem-faixa::-webkit-scrollbar-thumb:hover {
+      background-color: rgb(var(--cor-texto-suave));
+    }
+  }
 }
 
 /* Respeita quem pediu menos movimento no sistema operacional. */
